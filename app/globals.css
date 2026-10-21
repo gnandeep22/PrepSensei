@@ -1,0 +1,834 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --font-sans: var(--font-sans), -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'SF Pro', system-ui, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --font-mono: var(--font-mono), 'SF Mono', ui-monospace, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+:root {
+  color-scheme: light;
+  --background: oklch(0.985 0.003 240);
+  --foreground: oklch(0.15 0.02 250);
+  --card: oklch(1 0 0 / 92%);
+  --card-foreground: oklch(0.15 0.02 250);
+  --popover: oklch(1 0 0 / 96%);
+  --popover-foreground: oklch(0.15 0.02 250);
+  --primary: oklch(0.64 0.215 19.4);
+  --primary-foreground: oklch(0.99 0 0);
+  --success: oklch(0.62 0.18 150);
+  --warning: oklch(0.72 0.16 70);
+  --secondary: oklch(0.96 0.005 240);
+  --secondary-foreground: oklch(0.2 0.02 250);
+  --muted: oklch(0.96 0.005 240);
+  --muted-foreground: oklch(0.5 0.02 250);
+  --accent: oklch(0.95 0.01 240);
+  --accent-foreground: oklch(0.2 0.02 250);
+  --destructive: oklch(0.58 0.22 25);
+  --border: oklch(0 0 0 / 8%);
+  --input: oklch(0 0 0 / 9%);
+  --ring: oklch(0.64 0.215 19.4 / 40%);
+  --chart-1: oklch(0.64 0.215 19.4);
+  --chart-2: oklch(0.62 0.18 150);
+  --chart-3: oklch(0.72 0.16 70);
+  --chart-4: oklch(0.58 0.22 25);
+  --chart-5: oklch(0.3 0.02 250);
+  --radius: 0.75rem;
+  --sidebar: oklch(0.98 0.003 240 / 90%);
+  --sidebar-foreground: oklch(0.15 0.02 250);
+  --sidebar-primary: oklch(0.64 0.215 19.4);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent: oklch(0.94 0.01 240);
+  --sidebar-accent-foreground: oklch(0.15 0.02 250);
+  --sidebar-border: oklch(0 0 0 / 8%);
+  --sidebar-ring: oklch(0.64 0.215 19.4 / 40%);
+}
+
+.dark {
+  color-scheme: dark;
+  --background: oklch(0.11 0.012 250);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.16 0.015 250 / 80%);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.16 0.015 250 / 95%);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.667 0.204 19.4);
+  --primary-foreground: oklch(0.99 0 0);
+  --success: oklch(0.68 0.18 150);
+  --warning: oklch(0.78 0.16 70);
+  --secondary: oklch(0.2 0.015 250);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.19 0.012 250);
+  --muted-foreground: oklch(0.68 0.02 250);
+  --accent: oklch(0.22 0.015 250);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.65 0.22 25);
+  --border: oklch(1 0 0 / 9%);
+  --input: oklch(1 0 0 / 12%);
+  --ring: oklch(0.667 0.204 19.4 / 50%);
+  --chart-1: oklch(0.667 0.204 19.4);
+  --chart-2: oklch(0.68 0.18 150);
+  --chart-3: oklch(0.78 0.16 70);
+  --chart-4: oklch(0.65 0.22 25);
+  --chart-5: oklch(0.85 0 0);
+  --sidebar: oklch(0.13 0.012 250 / 90%);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.667 0.204 19.4);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent: oklch(0.2 0.015 250);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 8%);
+  --sidebar-ring: oklch(0.667 0.204 19.4 / 50%);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) {
+    color-scheme: dark;
+    --background: oklch(0.11 0.012 250);
+    --foreground: oklch(0.985 0 0);
+    --card: oklch(0.16 0.015 250 / 80%);
+    --card-foreground: oklch(0.985 0 0);
+    --popover: oklch(0.16 0.015 250 / 95%);
+    --popover-foreground: oklch(0.985 0 0);
+    --primary: oklch(0.667 0.204 19.4);
+    --primary-foreground: oklch(0.99 0 0);
+    --success: oklch(0.68 0.18 150);
+    --warning: oklch(0.78 0.16 70);
+    --secondary: oklch(0.2 0.015 250);
+    --secondary-foreground: oklch(0.985 0 0);
+    --muted: oklch(0.19 0.012 250);
+    --muted-foreground: oklch(0.68 0.02 250);
+    --accent: oklch(0.22 0.015 250);
+    --accent-foreground: oklch(0.985 0 0);
+    --destructive: oklch(0.65 0.22 25);
+    --border: oklch(1 0 0 / 9%);
+    --input: oklch(1 0 0 / 12%);
+    --ring: oklch(0.667 0.204 19.4 / 50%);
+    --chart-1: oklch(0.667 0.204 19.4);
+    --chart-2: oklch(0.68 0.18 150);
+    --chart-3: oklch(0.78 0.16 70);
+    --chart-4: oklch(0.65 0.22 25);
+    --chart-5: oklch(0.85 0 0);
+    --sidebar: oklch(0.13 0.012 250 / 90%);
+    --sidebar-foreground: oklch(0.985 0 0);
+    --sidebar-primary: oklch(0.667 0.204 19.4);
+    --sidebar-primary-foreground: oklch(0.99 0 0);
+    --sidebar-accent: oklch(0.2 0.015 250);
+    --sidebar-accent-foreground: oklch(0.985 0 0);
+    --sidebar-border: oklch(1 0 0 / 8%);
+    --sidebar-ring: oklch(0.667 0.204 19.4 / 50%);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11', 'calt';
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11', 'calt';
+  }
+
+  /* Apple HIG Typographic Hierarchy and Impeccable line-wrap standards */
+  h1, h2, h3, h4, h5, h6 {
+    text-wrap: balance;
+    letter-spacing: -0.025em;
+    font-weight: 600;
+  }
+  h1 {
+    letter-spacing: -0.03em;
+  }
+  p {
+    text-wrap: pretty;
+  }
+
+  /* Monospace & Tabular Numeric Precision */
+  code, kbd, samp, pre, .font-mono {
+    font-family: var(--font-mono);
+    font-feature-settings: 'calt' 0;
+  }
+  .tabular-nums, [data-tabular-nums] {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum';
+  }
+
+  select {
+    color-scheme: light;
+    background-color: var(--card);
+    color: var(--foreground);
+  }
+
+  select option,
+  select optgroup {
+    background-color: #ffffff;
+    color: #09090b;
+  }
+
+  .dark select,
+  :root[class~="dark"] select,
+  [data-theme='dark'] select {
+    color-scheme: dark;
+    background-color: var(--card);
+    color: var(--foreground);
+  }
+
+  .dark select option,
+  .dark select optgroup,
+  :root[class~="dark"] select option,
+  :root[class~="dark"] select optgroup,
+  [data-theme='dark'] select option,
+  [data-theme='dark'] select optgroup {
+    background-color: #18181b !important;
+    color: #f4f4f5 !important;
+  }
+}
+
+@layer utilities {
+  .smooth-transition {
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .bouncy-spring {
+    transition: all 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .bouncy-bubble {
+    transition: left 380ms cubic-bezier(0.34, 1.56, 0.64, 1), width 380ms cubic-bezier(0.34, 1.56, 0.64, 1), opacity 200ms ease;
+  }
+
+  .bouncy-hover {
+    transition: transform 260ms cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 260ms ease;
+  }
+  .bouncy-hover:hover {
+    transform: translateY(-3px) scale(1.008);
+  }
+
+  .active-bouncy {
+    transition: transform 160ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .active-bouncy:active {
+    transform: scale(0.96);
+  }
+
+  .hover-lift {
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .hover-lift:hover {
+    transform: translateY(-2px);
+  }
+
+  .animate-soundwave-1 {
+    animation: soundwave 1s ease-in-out infinite;
+  }
+  .animate-soundwave-2 {
+    animation: soundwave 1s ease-in-out infinite 0.15s;
+  }
+  .animate-soundwave-3 {
+    animation: soundwave 1s ease-in-out infinite 0.3s;
+  }
+  .animate-soundwave-4 {
+    animation: soundwave 1s ease-in-out infinite 0.45s;
+  }
+  .animate-soundwave-5 {
+    animation: soundwave 1s ease-in-out infinite 0.6s;
+  }
+
+  .animate-radar-ring {
+    animation: radarRing 2s cubic-bezier(0, 0.2, 0.8, 1) infinite;
+  }
+
+  .animate-gradient-slow {
+    background-size: 200% 200%;
+    animation: gradientFlow 6s ease infinite;
+  }
+}
+
+@keyframes soundwave {
+  0%, 100% {
+    height: 4px;
+    opacity: 0.4;
+  }
+  50% {
+    height: 18px;
+    opacity: 1;
+  }
+}
+
+@keyframes radarRing {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+
+@keyframes gradientFlow {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Reference 1: The Orbital OTP Animation ("4 boxes. One ring. Zero dependencies. Type the last digit and the row curls onto an orbit, spins a turn and a quarter, and screws down into one verified tile") */
+@keyframes orbitSpinQuarter {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(450deg);
+  }
+}
+
+@keyframes orbitCounterSpinQuarter {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(-450deg);
+  }
+}
+
+@keyframes otpShake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  15%, 45%, 75% {
+    transform: translateX(-6px);
+  }
+  30%, 60%, 90% {
+    transform: translateX(6px);
+  }
+}
+
+@keyframes verifiedPop {
+  0% {
+    transform: scale(0.65);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes emeraldAura {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(16, 185, 129, 0.25), inset 0 0 12px rgba(16, 185, 129, 0.15);
+  }
+  50% {
+    box-shadow: 0 0 32px rgba(16, 185, 129, 0.55), inset 0 0 20px rgba(16, 185, 129, 0.3);
+  }
+}
+
+@keyframes coldLightPulse {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(0.98);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.02);
+  }
+}
+
+.animate-orbit-spin {
+  animation: orbitSpinQuarter 0.95s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-orbit-counter-spin {
+  animation: orbitCounterSpinQuarter 0.95s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-otp-shake {
+  animation: otpShake 0.4s ease-in-out;
+}
+
+.animate-verified-pop {
+  animation: verifiedPop 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-emerald-aura {
+  animation: emeraldAura 2s ease-in-out infinite;
+}
+
+.animate-cold-light {
+  animation: coldLightPulse 3s ease-in-out infinite;
+}
+
+/* Reference 2: Apple-inspired Design System Utilities */
+.glass-apple {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.dark .glass-apple {
+  background: rgba(15, 18, 26, 0.75);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-apple-card {
+  position: relative;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.04), 0 2px 6px -1px rgba(0, 0, 0, 0.02);
+  border-radius: 1.25rem;
+}
+
+.dark .glass-apple-card {
+  background: rgba(18, 21, 31, 0.72);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  box-shadow: 0 16px 40px -8px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  border-radius: 1.25rem;
+}
+
+.specular-border {
+  position: relative;
+}
+
+.specular-border::before {
+  content: '';
+  position: absolute;
+  inset-x: 0;
+  top: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 5%, rgba(255, 255, 255, 0.28) 50%, transparent 95%);
+  pointer-events: none;
+  border-top-left-radius: inherit;
+  border-top-right-radius: inherit;
+}
+
+.active-spring {
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.active-spring:active {
+  transform: scale(0.97);
+}
+
+/* Reference 3: Apple Music / iOS 18 Floating Island Liquid Glass */
+.apple-liquid-glass {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.78) 0%, rgba(255, 255, 255, 0.45) 100%);
+  backdrop-filter: blur(48px) saturate(220%) contrast(102%);
+  -webkit-backdrop-filter: blur(48px) saturate(220%) contrast(102%);
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  box-shadow:
+    0 20px 48px -8px rgba(0, 0, 0, 0.15),
+    0 6px 18px -2px rgba(0, 0, 0, 0.08),
+    inset 0 1.5px 1.5px 0 rgba(255, 255, 255, 0.98),
+    inset 0 -1.5px 2px 0 rgba(0, 0, 0, 0.07),
+    inset 1px 0 1.5px 0 rgba(255, 255, 255, 0.5),
+    inset -1px 0 1.5px 0 rgba(255, 255, 255, 0.5);
+}
+
+.dark .apple-liquid-glass {
+  background: linear-gradient(135deg, rgba(28, 28, 34, 0.72) 0%, rgba(18, 18, 22, 0.6) 100%) !important;
+  backdrop-filter: blur(28px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  box-shadow:
+    0 16px 40px -8px rgba(0, 0, 0, 0.6),
+    0 4px 16px -2px rgba(0, 0, 0, 0.4),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.15),
+    inset 0 -1px 1px 0 rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Active Liquid Bubble Droplet (Inside the Pill Track) */
+.apple-liquid-bubble {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.78) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  box-shadow:
+    0 4px 16px -2px rgba(0, 0, 0, 0.12),
+    0 2px 6px 0 rgba(0, 0, 0, 0.06),
+    inset 0 1.5px 1px 0 rgba(255, 255, 255, 1),
+    inset 0 -1px 1px 0 rgba(0, 0, 0, 0.05);
+}
+
+.dark .apple-liquid-bubble {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.05) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow:
+    0 4px 16px -2px rgba(0, 0, 0, 0.5),
+    0 2px 6px 0 rgba(0, 0, 0, 0.25),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.28),
+    inset 0 -1px 1px 0 rgba(0, 0, 0, 0.2);
+}
+
+/* Reference: Apple WWDC25 Liquid Glass Droplet (Session 219) */
+.spline-liquid-droplet {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.82) 0%, rgba(255, 255, 255, 0.52) 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.9) !important;
+  box-shadow:
+    0 4px 16px -2px rgba(0, 0, 0, 0.08),
+    0 1px 4px 0 rgba(0, 0, 0, 0.04),
+    inset 0 1.5px 1px 0 rgba(255, 255, 255, 0.98),
+    inset 0 -1px 1px 0 rgba(0, 0, 0, 0.04) !important;
+}
+
+.dark .spline-liquid-droplet {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.06) 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  box-shadow:
+    0 4px 16px -2px rgba(0, 0, 0, 0.5),
+    0 2px 6px -1px rgba(0, 0, 0, 0.25),
+    inset 0 1.5px 1px 0 rgba(255, 255, 255, 0.28),
+    inset 0 -1px 1px 0 rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Apple WWDC25 Fluid Spring Glide (120Hz ProMotion Ready) */
+.spline-liquid-glide {
+  transform-origin: 0 50%;
+  transition:
+    transform 240ms cubic-bezier(0.25, 1, 0.4, 1),
+    width 240ms cubic-bezier(0.25, 1, 0.4, 1),
+    opacity 160ms cubic-bezier(0.25, 1, 0.4, 1);
+  will-change: transform, width, opacity;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spline-liquid-glide {
+    transition: none !important;
+  }
+}
+
+/* WWDC25 Liquid Glass Button System */
+.liquid-glass-btn-primary {
+  position: relative;
+  background: linear-gradient(180deg, rgba(250, 79, 97, 0.96) 0%, rgba(235, 60, 80, 0.88) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  box-shadow:
+    0 4px 14px -2px rgba(250, 79, 97, 0.4),
+    0 1px 3px 0 rgba(250, 79, 97, 0.2),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.45),
+    inset 0 -1px 1px 0 rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  transition: all 160ms cubic-bezier(0.25, 1, 0.4, 1);
+}
+
+.liquid-glass-btn-primary:hover {
+  filter: brightness(1.04);
+  box-shadow:
+    0 6px 20px -2px rgba(250, 79, 97, 0.52),
+    0 2px 6px 0 rgba(250, 79, 97, 0.3),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.55),
+    inset 0 -1px 1px 0 rgba(0, 0, 0, 0.15);
+}
+
+.liquid-glass-btn-primary:active {
+  transform: scale(0.97);
+  filter: brightness(0.96);
+  box-shadow:
+    0 2px 8px -1px rgba(250, 79, 97, 0.3),
+    inset 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+}
+
+.liquid-glass-btn-glass {
+  position: relative;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.6) 0%, rgba(255, 255, 255, 0.35) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow:
+    0 4px 12px -2px rgba(0, 0, 0, 0.06),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.95),
+    inset 0 -1px 1px 0 rgba(0, 0, 0, 0.04);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  transition: all 160ms cubic-bezier(0.25, 1, 0.4, 1);
+}
+
+.dark .liquid-glass-btn-glass {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.05) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow:
+    0 4px 14px -2px rgba(0, 0, 0, 0.4),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.22),
+    inset 0 -1px 1px 0 rgba(0, 0, 0, 0.25);
+}
+
+.liquid-glass-btn-glass:hover {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.75) 0%, rgba(255, 255, 255, 0.5) 100%);
+  border-color: rgba(255, 255, 255, 0.85);
+  box-shadow:
+    0 6px 18px -2px rgba(0, 0, 0, 0.09),
+    inset 0 1px 1.5px 0 rgba(255, 255, 255, 1);
+}
+
+.dark .liquid-glass-btn-glass:hover {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.08) 100%);
+  border-color: rgba(255, 255, 255, 0.24);
+  box-shadow:
+    0 6px 18px -2px rgba(0, 0, 0, 0.5),
+    inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.3);
+}
+
+.liquid-glass-btn-glass:active {
+  transform: scale(0.97);
+}
+
+/* Reference: Apple VisionOS / iOS 18 Optical Lens Droplet (uploaded_media_0 & 1) */
+.apple-lens-droplet {
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: brightness(108%) contrast(106%) saturate(135%) blur(0.5px);
+  -webkit-backdrop-filter: brightness(108%) contrast(106%) saturate(135%) blur(0.5px);
+  border: 1px solid rgba(255, 255, 255, 0.75);
+  box-shadow:
+    0 12px 28px -4px rgba(0, 0, 0, 0.16),
+    0 4px 10px rgba(0, 0, 0, 0.08),
+    inset 0 2px 3.5px rgba(255, 255, 255, 0.98),
+    inset 0 -2px 3.5px rgba(255, 255, 255, 0.82),
+    inset 0 0 14px rgba(255, 255, 255, 0.38);
+}
+
+.dark .apple-lens-droplet {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: brightness(115%) contrast(110%) saturate(135%) blur(0.5px);
+  -webkit-backdrop-filter: brightness(115%) contrast(110%) saturate(135%) blur(0.5px);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  box-shadow:
+    0 14px 34px -4px rgba(0, 0, 0, 0.55),
+    0 4px 12px rgba(0, 0, 0, 0.3),
+    inset 0 2px 3.5px rgba(255, 255, 255, 0.5),
+    inset 0 -2px 3.5px rgba(255, 255, 255, 0.3),
+    inset 0 0 14px rgba(255, 255, 255, 0.12);
+}
+
+
+
+/* Reference 4: Apple VisionOS Frosted Glass Card & Carousel (matches uploaded_media_1792427935051) */
+.visionos-carousel-card {
+  position: relative;
+  background: rgba(18, 20, 26, 0.68) !important;
+  backdrop-filter: blur(54px) saturate(190%) contrast(102%) !important;
+  -webkit-backdrop-filter: blur(54px) saturate(190%) contrast(102%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  box-shadow:
+    0 24px 60px -12px rgba(0, 0, 0, 0.65),
+    inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.3),
+    inset 0 -1px 1px 0 rgba(0, 0, 0, 0.25) !important;
+}
+
+.visionos-carousel-pill {
+  background: rgba(24, 26, 32, 0.62) !important;
+  backdrop-filter: blur(36px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(36px) saturate(180%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  box-shadow:
+    0 8px 24px -4px rgba(0, 0, 0, 0.45),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.25) !important;
+}
+
+.visionos-glass-card {
+  position: relative;
+  background: rgba(255, 255, 255, 0.72) !important;
+  backdrop-filter: blur(48px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(48px) saturate(180%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.6) !important;
+  box-shadow:
+    0 16px 40px -8px rgba(0, 0, 0, 0.08),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.9),
+    inset 0 -1px 1px 0 rgba(0, 0, 0, 0.04) !important;
+}
+
+.dark .visionos-glass-card {
+  background: rgba(18, 20, 26, 0.68) !important;
+  backdrop-filter: blur(52px) saturate(190%) contrast(102%) !important;
+  -webkit-backdrop-filter: blur(52px) saturate(190%) contrast(102%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  box-shadow:
+    0 20px 48px -10px rgba(0, 0, 0, 0.55),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.25),
+    inset 0 -1px 1px 0 rgba(0, 0, 0, 0.25) !important;
+}
+
+/* VisionOS Transparent Frosted Glass Pill Button */
+.visionos-glass-pill {
+  background: rgba(255, 255, 255, 0.65) !important;
+  backdrop-filter: blur(32px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(32px) saturate(160%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.5) !important;
+  box-shadow:
+    0 6px 18px -4px rgba(0, 0, 0, 0.1),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.8) !important;
+}
+
+.dark .visionos-glass-pill {
+  background: rgba(24, 26, 32, 0.62) !important;
+  backdrop-filter: blur(32px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(32px) saturate(180%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  box-shadow:
+    0 8px 20px -4px rgba(0, 0, 0, 0.4),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.22) !important;
+}
+
+/* Carousel 4-Sided Soft Edge Feathering */
+.carousel-image-fade {
+  mask-image: radial-gradient(ellipse 95% 94% at 50% 50%, #000 58%, rgba(0, 0, 0, 0.7) 78%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse 95% 94% at 50% 50%, #000 58%, rgba(0, 0, 0, 0.7) 78%, transparent 100%);
+}
+
+/* Reference: WWDC 2025 Session 219 Floating Liquid Glass Sidebar with Spatial Depth */
+.liquid-glass-sidebar {
+  background: rgba(255, 255, 255, 0.76);
+  backdrop-filter: blur(48px) saturate(180%) contrast(101%);
+  -webkit-backdrop-filter: blur(48px) saturate(180%) contrast(101%);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  box-shadow:
+    0 24px 60px -12px rgba(0, 0, 0, 0.12),
+    0 4px 16px -2px rgba(0, 0, 0, 0.04),
+    inset 0 1.5px 1.5px 0 rgba(255, 255, 255, 0.95),
+    inset 0 -1px 1px 0 rgba(0, 0, 0, 0.03);
+  transition: all 240ms cubic-bezier(0.25, 1, 0.4, 1);
+}
+
+.dark .liquid-glass-sidebar {
+  background: rgba(18, 20, 26, 0.72);
+  backdrop-filter: blur(54px) saturate(190%) contrast(102%);
+  -webkit-backdrop-filter: blur(54px) saturate(190%) contrast(102%);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow:
+    0 28px 70px -12px rgba(0, 0, 0, 0.7),
+    0 4px 18px -2px rgba(0, 0, 0, 0.45),
+    inset 0 1.5px 1.5px 0 rgba(255, 255, 255, 0.22),
+    inset 0 -1px 1px 0 rgba(0, 0, 0, 0.35);
+  transition: all 240ms cubic-bezier(0.25, 1, 0.4, 1);
+}
+
+/* WWDC25 Reference Sidebar Active Item Pill (matches uploaded_media_1792445011373) */
+.liquid-glass-nav-active {
+  background: rgba(0, 0, 0, 0.055);
+  border: 1px solid rgba(0, 0, 0, 0.03);
+  box-shadow:
+    0 2px 8px -2px rgba(0, 0, 0, 0.05),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.85);
+}
+
+.dark .liquid-glass-nav-active {
+  background: rgba(255, 255, 255, 0.09);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 2px 8px -2px rgba(0, 0, 0, 0.3),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.18);
+}
+
+/* Hide scrollbar for sidebar while maintaining smooth scroll */
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Linear / Raycast-inspired Minimal Surfaces */
+.linear-card {
+  position: relative;
+  background: var(--card);
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.04);
+  transition: all 180ms cubic-bezier(0.25, 1, 0.4, 1);
+}
+
+.dark .linear-card {
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.4), inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+}
+
+.linear-card:hover {
+  border-color: rgba(0, 0, 0, 0.15);
+}
+
+.dark .linear-card:hover {
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+/* 120Hz Fluid Motion Spring Transitions */
+.fluid-spring {
+  transition: all 200ms cubic-bezier(0.25, 1, 0.4, 1);
+}
+
+.fluid-spring:active {
+  transform: scale(0.975);
+}
+
+/* Reduced Motion Baseline */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+
+
+
