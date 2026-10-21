@@ -6,9 +6,6 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  turbopack: {
-    root: "/home/gnandeep/prep-sensei-last",
-  },
-}
+};
 
-export default nextConfig
+export default nextConfig;
