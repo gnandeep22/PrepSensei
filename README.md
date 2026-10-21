@@ -385,7 +385,7 @@ All sensitive values must be declared in `.env.local`. **Never commit `.env.loca
 
 ## Database Setup & Migrations
 
-The database is built on PostgreSQL and managed via Drizzle ORM in [`lib/db/schema.ts`](file:///home/gnandeep/lib/db/schema.ts).
+The database is built on PostgreSQL and managed via Drizzle ORM in [`lib/db/schema.ts`](lib/db/schema.ts).
 
 ### Running Migrations
 
