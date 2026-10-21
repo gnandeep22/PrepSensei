@@ -284,6 +284,7 @@ PrepSensei/
 │   └── db-view.mjs                  # Interactive terminal database inspection tool
 ├── .env.example                     # Sanitized environment variable template
 ├── .gitignore                       # Production Git ignore rules
+├── LICENSE                          # MIT License specification
 ├── next.config.mjs                  # Next.js configuration
 ├── package.json                     # Project manifest and dependencies
 ├── pnpm-lock.yaml                   # Deterministic pnpm lockfile
