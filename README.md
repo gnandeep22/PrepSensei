@@ -18,9 +18,37 @@ PrepSensei is an enterprise-grade AI-powered interview preparation, biometric ve
 
 ---
 
+## 📸 Interface Preview
+
+<div align="center">
+
+### Candidate Dashboard
+*Apple WWDC 2025 Liquid Glass UI with VisionOS ambient illumination and collapsible rail navigation.*
+
+![Candidate Dashboard](docs/screenshots/candidate-dashboard.png)
+
+</div>
+
+<br />
+
+| **Animated Orbital OTP Verification** | **Face ID Biometric Verification** |
+|:---:|:---:|
+| ![Animated OTP Verification](docs/screenshots/otp-verification.png) | ![Face ID Verification](docs/screenshots/face-verification.png) |
+| *Physical 4-digit spinning turntable with verified emerald transition* | *Real-time facial vector matching & anti-spoofing alignment guide* |
+
+<br />
+
+| **AI Mock Interview Simulator** | **Recruiter Mission Control** |
+|:---:|:---:|
+| ![AI Mock Interview](docs/screenshots/ai-interview.png) | ![Recruiter Dashboard](docs/screenshots/recruiter-dashboard.png) |
+| *Real-time STT/TTS voice synthesis & proctoring telemetry* | *Automated shortlisting, applicant pipeline & decision dispatch* |
+
+---
+
 ## Contents
 
 - [Overview](#overview)
+- [📸 Interface Preview](#-interface-preview)
 - [Key Features](#key-features)
   - [Candidate Experience](#candidate-experience)
   - [Recruiter Experience](#recruiter-experience)
@@ -267,6 +295,8 @@ PrepSensei/
 │   ├── recruiter/                   # Recruiter modals, shortlist agents, and charts
 │   ├── shared.tsx                   # Standardized StatCards and page headers
 │   └── ui/                          # Radix/Base UI accessible primitives (Card, Button, Dialog)
+├── docs/                            # Documentation assets
+│   └── screenshots/                 # Application preview screenshots
 ├── lib/                             # Shared business logic and utilities
 │   ├── ai/                          # Google Gemini model initializers
 │   ├── auth.ts                      # Server-side Better Auth configuration
@@ -302,7 +332,7 @@ Before setting up PrepSensei locally, ensure your environment has:
 2. **pnpm**: `v9.0.0` or higher (installed via Corepack: `corepack enable && corepack prepare pnpm@latest --activate`).
 3. **PostgreSQL**: `v15` or higher running locally or accessible remotely.
 4. **Google Gemini API Key**: Free or paid key from [Google AI Studio](https://aistudio.google.com/).
-5. **Modern Browser**: Google Chrome or Microsoft Edge recommended for WebGL hardware acceleration, camera stream, and Web Speech API capabilities.
+5. **Modern Browser**: Google Chrome, Brave, or Microsoft Edge recommended for WebGL hardware acceleration, camera stream, and Web Speech API capabilities.
 
 ---
 
@@ -333,24 +363,31 @@ Open `.env.local` in your editor and configure the values (see [Environment Vari
 
 ### 4. Initialize PostgreSQL Database
 
-Ensure PostgreSQL is running and create the database:
+Ensure PostgreSQL is running and create the local `prepsensei` database:
 
 ```bash
 # Using PostgreSQL CLI
 createdb prepsensei
+
+# Or via psql terminal:
+psql -U postgres -c "CREATE DATABASE prepsensei;"
 ```
 
-Verify that your `DATABASE_URL` in `.env.local` reflects your local database username and password.
+Verify that your `DATABASE_URL` in `.env.local` uses the identical database name:
+
+```env
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/prepsensei"
+```
 
 ### 5. Run Database Migrations
 
-Push the Drizzle ORM schema to your PostgreSQL instance:
+Push the Drizzle ORM schema to your `prepsensei` database:
 
 ```bash
 pnpm db:migrate
 ```
 
-*Optional:* Verify that tables (`user`, `session`, `candidate_profile`, `job`, `application`, `candidate_notification`, etc.) were created:
+*Optional:* Verify that tables (`user`, `session`, `candidate_profile`, `job`, `application`, `candidate_notification`, etc.) were created in `prepsensei`:
 
 ```bash
 pnpm db:view
@@ -370,9 +407,9 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 All sensitive values must be declared in `.env.local`. **Never commit `.env.local` to Git.**
 
-| Variable | Description | Example / Default | Required |
+| Variable | Description | Example / Canonical Value | Required |
 |---|---|---|---|
-| `DATABASE_URL` | PostgreSQL connection URI | `postgresql://postgres:postgres@localhost:5432/prepsensei` | **Yes** |
+| `DATABASE_URL` | PostgreSQL connection URI pointing to `prepsensei` | `postgresql://postgres:postgres@localhost:5432/prepsensei` | **Yes** |
 | `BETTER_AUTH_SECRET` | 32+ character random secret for signing authentication sessions | `openssl rand -hex 32` | **Yes** |
 | `BETTER_AUTH_URL` | Base canonical application URL | `http://localhost:3000` | **Yes** |
 | `GEMINI_API_KEY` | Google AI Studio Gemini API key | `AIzaSy...` | **Yes** |
@@ -389,7 +426,7 @@ The database is built on PostgreSQL and managed via Drizzle ORM in [`lib/db/sche
 
 ### Running Migrations
 
-To apply schema changes to your database:
+To apply schema changes to your `prepsensei` database:
 
 ```bash
 pnpm db:migrate
@@ -397,7 +434,7 @@ pnpm db:migrate
 
 ### Inspecting Database State
 
-To inspect total registered candidates, active job postings, application submissions, and integrity records from the terminal:
+To inspect total registered candidates, active job postings, application submissions, and integrity records in the `prepsensei` database:
 
 ```bash
 pnpm db:view
@@ -412,7 +449,7 @@ pnpm db:view
 | `pnpm dev` | Starts local Next.js development server with Turbopack on `http://localhost:3000` |
 | `pnpm build` | Compiles optimized Next.js production build across all 46 static and dynamic routes |
 | `pnpm start` | Launches production server on `http://localhost:3000` |
-| `pnpm db:migrate` | Executes database migration script using credentials in `.env.local` |
+| `pnpm db:migrate` | Executes database migration script on `prepsensei` using credentials in `.env.local` |
 | `pnpm db:view` | Displays an interactive terminal view of tables, records, and database counts |
 
 ---
@@ -461,7 +498,7 @@ PrepSensei treats user biometrics, camera feeds, and personal resumes with high 
 
 ## Troubleshooting
 
-### Database connection failed (`ECONNREFUSED` or `database does not exist`)
+### Database connection failed (`ECONNREFUSED` or `database "prepsensei" does not exist`)
 - Ensure PostgreSQL is active: `sudo systemctl status postgresql` (Linux) or check your PostgreSQL service.
 - Verify the database exists: run `createdb prepsensei` or connect with `psql -U postgres` and run `CREATE DATABASE prepsensei;`.
 - Verify your password and user permissions in `.env.local`.
