@@ -336,27 +336,30 @@ export function AuthForm({ mode, forceFaceReg = false }: { mode: Mode; forceFace
             } as any)
 
             if (signUpError) {
-              setError(signUpError.message ?? "Could not create your account.")
+              const msg = signUpError.message ?? "Could not create your account."
+              setError(msg)
               setLoading(false)
-              return
+              throw new Error(msg)
             }
 
             setLoading(false)
 
             if (role === "recruiter") {
-              router.push("/recruiter")
-              router.refresh()
+              window.location.href = "/recruiter"
               return
             }
 
             // Candidate signup: proceed to biometric face registration
+            setSignUpStep("details")
             setShowFaceReg(true)
             if (typeof window !== "undefined") {
               window.history.replaceState(null, "", "/sign-up?step=face")
             }
-          } catch {
-            setError("Something went wrong. Please try again.")
+          } catch (err: any) {
+            const msg = err?.message || "Something went wrong. Please try again."
+            setError(msg)
             setLoading(false)
+            throw err instanceof Error ? err : new Error(msg)
           }
         }}
       />

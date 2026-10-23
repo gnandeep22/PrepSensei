@@ -287,7 +287,7 @@ export async function POST(req: NextRequest) {
       })
 
       // Set Better-Auth signed session cookie
-      const isSecure = (process.env.BETTER_AUTH_URL?.startsWith("https://") ?? false) && process.env.NODE_ENV === "production"
+      const isSecure = process.env.NODE_ENV === "production" || (process.env.BETTER_AUTH_URL?.startsWith("https://") ?? false)
       res.cookies.set("better-auth.session_token", signedCookieValue, {
         httpOnly: true,
         path: "/",

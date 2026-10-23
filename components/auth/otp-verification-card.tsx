@@ -167,7 +167,17 @@ export function OtpVerificationCard({
         setTimeout(async () => {
           setAnimationState("verified")
           if (onVerified) {
-            await onVerified(code)
+            try {
+              await onVerified(code)
+            } catch (err: any) {
+              setAnimationState("error")
+              setErrorMessage(err?.message || "Failed to complete account registration. Please try again.")
+              setTimeout(() => {
+                setAnimationState("idle")
+                setDigits(["", "", "", ""])
+                inputRefs.current[0]?.focus()
+              }, 1200)
+            }
           }
         }, 320)
       } else {
