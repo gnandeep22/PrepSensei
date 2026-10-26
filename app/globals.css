@@ -831,10 +831,15 @@
 }
 
 @media (max-width: 1023px) {
+  .app-frame {
+    flex-direction: column;
+  }
+
   .desktop-sidebar {
     display: none !important;
   }
 
+  .app-frame > .flex-1,
   .app-frame main {
     width: 100%;
     max-width: 100%;
@@ -871,7 +876,7 @@
   border-color: rgba(255, 255, 255, 0.16);
 }
 
-/* PrepSensei material system — one calm graphite surface language with violet reserved for action. */
+/* PrepSensei material system — one calm graphite surface language with coral reserved for action. */
 :root {
   --material-border: rgba(15, 23, 42, 0.1);
   --material-surface: rgba(255, 255, 255, 0.78);
