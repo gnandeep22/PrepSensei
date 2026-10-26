@@ -439,7 +439,7 @@ function OfficialInterviewContent() {
           description={`Verified Proctored Assessment · ${jobTitle} at ${company}`}
         />
 
-        <Card className="border-amber-500/30 bg-gradient-to-b from-card to-amber-500/[0.03]">
+        <Card className="glass-panel border-amber-500/30 bg-amber-500/[0.03]">
           <CardHeader className="text-center pb-2">
             <div className="mx-auto mb-2 flex size-12 items-center justify-center rounded-full bg-amber-500/10 text-amber-500 ring-4 ring-amber-500/10">
               <Lock className="size-6" />
@@ -563,7 +563,7 @@ function OfficialInterviewContent() {
           description={`Verified Candidate Assessment · ${jobTitle} at ${company}`}
         />
 
-        <div className="rounded-lg border border-emerald-500/40 bg-gradient-to-r from-emerald-500/10 via-emerald-500/5 to-transparent p-4 flex items-start gap-3">
+        <div className="glass-panel rounded-lg border-emerald-500/40 bg-emerald-500/[0.06] p-4 flex items-start gap-3">
           <CheckCircle2 className="size-5 text-emerald-500 mt-0.5 shrink-0" />
           <div className="flex-1 text-xs">
             <p className="font-semibold text-foreground text-sm flex items-center gap-2">
@@ -707,7 +707,7 @@ function OfficialInterviewContent() {
                 <AlertTriangle className="size-5 shrink-0 text-destructive" />
                 <div className="flex flex-col">
                   <span className="font-bold text-xs sm:text-sm">
-                    ⚠ Identity Mismatch Detected
+                           Identity mismatch detected
                   </span>
                   <span className="text-xs opacity-90">
                     The vision system detected that the person in frame does not match {candidateDisplayName}&apos;s biometrics.
@@ -721,7 +721,7 @@ function OfficialInterviewContent() {
                 <Users className="size-5 shrink-0 text-amber-600 dark:text-amber-400" />
                 <div className="flex flex-col">
                   <span className="font-bold text-xs sm:text-sm">
-                    ⚠ Multiple Persons Detected ({Math.max(2, analysis.faceCount)} faces in frame)
+                           Multiple people detected ({Math.max(2, analysis.faceCount)} faces in frame)
                   </span>
                   <span className="text-xs opacity-90">
                     Ensure only the candidate is present in front of the camera during the session.
@@ -735,7 +735,7 @@ function OfficialInterviewContent() {
                 <Camera className="size-5 shrink-0 text-amber-600 dark:text-amber-400" />
                 <div className="flex flex-col">
                   <span className="font-bold text-xs sm:text-sm">
-                    ⚠ Camera Movement Detected
+                           Camera movement detected
                   </span>
                   <span className="text-xs opacity-90">
                     Camera angle or device shift detected. Please keep your device stable on a flat surface.
@@ -923,7 +923,7 @@ function OfficialInterviewContent() {
         />
 
         {/* Confirmation Banner */}
-        <div className="rounded-lg border border-emerald-500/40 bg-gradient-to-r from-emerald-500/10 via-emerald-500/5 to-transparent p-5 flex items-start gap-4">
+        <div className="glass-panel rounded-lg border-emerald-500/40 bg-emerald-500/[0.06] p-5 flex items-start gap-4">
           <div className="rounded-full bg-emerald-500/20 p-2 text-emerald-600 shrink-0">
             <CheckCircle2 className="size-6" />
           </div>

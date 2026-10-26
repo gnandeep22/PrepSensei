@@ -39,7 +39,7 @@ export function AiInterviewer({
   const displayText = question || statusText || (thinking ? "Analyzing your response…" : "Preparing your interview…")
 
   return (
-    <div className="relative flex aspect-video w-full flex-col justify-between overflow-hidden rounded-2xl border border-border/80 bg-gradient-to-b from-card via-muted/30 to-muted/60 p-3 sm:p-4 shadow-sm transition-all duration-300">
+    <div className="glass-panel relative flex aspect-video w-full flex-col justify-between overflow-hidden rounded-2xl border-border/80 bg-background/25 p-3 sm:p-4 shadow-sm transition-all duration-300">
       {/* Ambient background glow when speaking or listening */}
       {speaking && (
         <div className="pointer-events-none absolute -top-12 -left-12 size-48 rounded-full bg-primary/15 blur-3xl animate-pulse" />

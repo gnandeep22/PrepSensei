@@ -166,7 +166,7 @@ export function SidebarNav({
             <Link
               href={role === "recruiter" ? "/recruiter" : "/"}
               title="PrepSensei Home"
-              className="flex size-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-rose-600 text-white shadow-xs transition-transform active:scale-95"
+              className="brand-mark flex size-9 items-center justify-center rounded-xl text-white shadow-xs transition-transform active:scale-95"
             >
               <GraduationCap className="size-5" />
             </Link>
@@ -186,7 +186,7 @@ export function SidebarNav({
               href={role === "recruiter" ? "/recruiter" : "/"}
               className="group flex items-center gap-2 transition-transform active:scale-95"
             >
-              <div className="flex size-7 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-rose-600 text-white shadow-xs">
+              <div className="brand-mark flex size-7 items-center justify-center rounded-xl text-white shadow-xs">
                 <GraduationCap className="size-4" />
               </div>
               <div className="flex flex-col">
@@ -376,12 +376,12 @@ export function SidebarNav({
   return (
     <>
       {/* Mobile Top Header (only on screens < lg) */}
-      <header className="lg:hidden sticky top-3 z-40 mx-4 mb-3 flex items-center justify-between rounded-2xl liquid-glass-sidebar px-3.5 py-2.5 shadow-lg">
+      <header className="mobile-nav sticky top-3 z-40 mx-3 mb-3 flex items-center justify-between rounded-2xl liquid-glass-sidebar px-3.5 py-2.5 shadow-lg sm:mx-4">
         <Link
           href={role === "recruiter" ? "/recruiter" : "/"}
           className="flex items-center gap-2 active:scale-95 transition-transform"
         >
-          <div className="flex size-7 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-rose-600 text-white shadow-xs">
+          <div className="brand-mark flex size-7 items-center justify-center rounded-xl text-white shadow-xs">
             <GraduationCap className="size-4" />
           </div>
           <span className="text-sm font-semibold text-foreground">PrepSensei</span>
@@ -404,11 +404,11 @@ export function SidebarNav({
       {/* Mobile Drawer Overlay */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm lg:hidden animate-in fade-in-0 duration-200"
+          className="mobile-nav-overlay fixed inset-0 z-50 bg-black/40 backdrop-blur-sm animate-in fade-in-0 duration-200"
           onClick={() => setMobileOpen(false)}
         >
           <div
-            className="fixed inset-y-3 left-3 w-72 rounded-[28px] liquid-glass-sidebar p-4 shadow-2xl animate-in slide-in-from-left duration-250 flex flex-col justify-between"
+            className="mobile-drawer fixed inset-y-3 left-3 w-[min(84vw,20rem)] rounded-[28px] liquid-glass-sidebar p-4 shadow-2xl animate-in slide-in-from-left duration-250 flex flex-col justify-between"
             onClick={(e) => e.stopPropagation()}
           >
             {renderNavContent(false)}
@@ -420,7 +420,7 @@ export function SidebarNav({
       <aside
         aria-label="Sidebar navigation"
         className={cn(
-          "hidden lg:flex fixed left-4 top-4 bottom-4 z-40 rounded-[28px] liquid-glass-sidebar flex-col justify-between shadow-2xl transition-all duration-300 ease-in-out",
+          "desktop-sidebar hidden lg:flex fixed left-4 top-4 bottom-4 z-40 rounded-[28px] liquid-glass-sidebar flex-col justify-between shadow-2xl transition-all duration-300 ease-in-out",
           minimized ? "w-18 px-2 py-3" : "w-64 xl:w-72 p-3.5"
         )}
       >

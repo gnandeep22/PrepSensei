@@ -285,10 +285,10 @@ export function computeMatch(candidate: CandidateProfile, job: Job): MatchResult
 
     if (skillHit || matchingProj || matchingExp || corpusHit) {
       matching.push(req)
-      if (matchingProj) {
-        evidenceCitations.push(`${req} in project "${matchingProj.name}"`)
-      } else if (matchingExp) {
-        evidenceCitations.push(`${req} at ${matchingExp.company}`)
+      if (matchingProj?.name) {
+        evidenceCitations.push(`project ${matchingProj.name}`)
+      } else if (matchingExp?.company) {
+        evidenceCitations.push(matchingExp.company)
       }
     } else {
       gaps.push(req)
@@ -317,13 +317,13 @@ export function computeMatch(candidate: CandidateProfile, job: Job): MatchResult
   const experienceMatch: MatchResult["experienceMatch"] =
     score >= 75 ? "Strong" : score >= 55 ? "Moderate" : "Limited"
 
-  const citationSummary = evidenceCitations.length > 0 ? ` Evidence verified in ${evidenceCitations.slice(0, 2).join(" and ")}.` : ""
+  const citationSummary = evidenceCitations.length > 0 ? ` Evidence appears in ${evidenceCitations.slice(0, 2).join(" and ")}.` : ""
   const explanation =
     experienceMatch === "Strong"
-      ? `RAG analysis confirmed strong alignment for ${job.title}. Your competencies in ${matching.slice(0, 3).join(", ")} directly satisfy essential requirements.${citationSummary}${gaps.length > 0 ? ` Primary gap to bridge: ${gaps[0]}.` : " You meet all listed skills!"}`
+      ? `Strong alignment for ${job.title}. Your profile shows ${matching.slice(0, 3).join(", ")}.${citationSummary}${gaps.length > 0 ? ` Focus next on ${gaps[0]}.` : " All listed skills are covered."}`
       : experienceMatch === "Moderate"
-        ? `You cover core requirements (${matching.slice(0, 3).join(", ")}), but ${job.company} also seeks competencies in ${gaps.slice(0, 2).join(" and ")}.${citationSummary}`
-        : `Stretch opportunity for ${job.title}. You have foundation in ${matching.slice(0, 2).join(", ") || "software fundamentals"}, but will need upskilling in ${gaps.slice(0, 3).join(", ")}.`
+        ? `You match ${matching.slice(0, 3).join(", ") || "some core requirements"}. ${job.company} also looks for ${gaps.slice(0, 2).join(" and ") || "additional role skills"}.${citationSummary}`
+        : `This is a stretch opportunity. Your profile shows ${matching.slice(0, 2).join(", ") || "software fundamentals"}; build depth in ${gaps.slice(0, 3).join(", ") || "the remaining role skills"}.`
 
   return { score, matching, gaps, experienceMatch, explanation }
 }

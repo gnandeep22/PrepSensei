@@ -33,7 +33,7 @@ export default function CandidateAssessmentPage() {
     <div className="flex flex-col gap-6 animate-in fade-in-50 duration-300">
       <PageHeader
         title="Technical Assessments"
-        description="Recruiter-published skill assessments. Complete timed challenges and screening questionnaires to benchmark your profile for open positions."
+        description="Complete recruiter assessments and benchmark your skills for open roles."
       />
 
       {published.length === 0 ? (

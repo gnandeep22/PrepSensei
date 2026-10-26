@@ -226,7 +226,7 @@ export function AuthForm({ mode, forceFaceReg = false }: { mode: Mode; forceFace
   // Face Sign-In step (Vision authentication)
   if (showFaceLogin) {
     return (
-      <div className="w-full max-w-md rounded-3xl glass-apple-card specular-border p-6 sm:p-8 flex flex-col gap-4">
+      <div className="auth-panel w-full max-w-md rounded-[2rem] specular-border p-6 sm:p-8 flex flex-col gap-4">
         <div className="text-center">
           <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-xs">
             <ScanFace className="size-6" />
@@ -273,7 +273,7 @@ export function AuthForm({ mode, forceFaceReg = false }: { mode: Mode; forceFace
   // Face Registration step (Candidates only - mandatory)
   if (showFaceReg) {
     return (
-      <div className="w-full max-w-md rounded-3xl glass-apple-card specular-border p-6 sm:p-8 flex flex-col gap-4">
+      <div className="auth-panel w-full max-w-md rounded-[2rem] specular-border p-6 sm:p-8 flex flex-col gap-4">
         <div className="text-center">
           <Badge variant="outline" className="border-amber-500/40 text-amber-600 dark:text-amber-400 text-xs mb-2 rounded-full px-3 py-0.5">
             Step 2 of 2 · Mandatory Biometric Registration
@@ -367,9 +367,9 @@ export function AuthForm({ mode, forceFaceReg = false }: { mode: Mode; forceFace
   }
 
   return (
-    <div className="w-full max-w-md rounded-3xl glass-apple-card specular-border p-6 sm:p-8 transition-all">
+    <div className="auth-panel w-full max-w-md rounded-[2rem] glass-apple-card specular-border p-6 sm:p-8 transition-all sm:p-9">
       <div className="mb-8 flex flex-col items-center gap-3 text-center">
-        <div className="flex size-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-xs">
+        <div className="brand-mark flex size-12 items-center justify-center rounded-2xl text-primary-foreground shadow-xs">
           <GraduationCap className="size-6" />
         </div>
         <div>
@@ -379,7 +379,7 @@ export function AuthForm({ mode, forceFaceReg = false }: { mode: Mode; forceFace
           </h1>
           <p className="mt-1 text-xs sm:text-sm text-muted-foreground text-pretty">
             {isSignUp
-              ? "Start preparing smarter with AI-guided career tools."
+               ? "Build a stronger path to your next interview."
               : "Sign in to continue your career preparation."}
           </p>
         </div>

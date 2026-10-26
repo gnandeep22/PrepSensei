@@ -287,7 +287,7 @@ export default function CandidatePipelinePage() {
     <div className="flex flex-col gap-6 animate-in fade-in-50 duration-300">
       <PageHeader
         title="Candidate Pipeline & AI Shortlisting"
-        description="Review candidate resumes, run RAG-grounded shortlisting agents to select top candidates according to your required quota, and evaluate interview reports."
+        description="Review resumes, shortlist candidates, and evaluate interview reports."
         actions={
           <div className="flex items-center gap-2">
             <Button variant="outline" nativeButton={false} render={<Link href="/recruiter/results" />}>
@@ -338,7 +338,7 @@ export default function CandidatePipelinePage() {
         {/* TAB 1: RESUME SHORTLISTING (APPLIED RESUMES) */}
         <TabsContent value="shortlisting" className="flex flex-col gap-4 mt-4">
           {/* Job Selector & AI Agent Control Card */}
-          <Card className="border-primary/20 bg-gradient-to-r from-card via-card to-primary/[0.03]">
+          <Card className="glass-panel border-primary/20">
             <CardHeader className="pb-3">
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                 <div>

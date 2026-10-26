@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { use, useMemo } from "react"
+import { motion } from "motion/react"
 import { ArrowLeft, ClipboardCheck, Loader2, MessagesSquare, Sparkles } from "lucide-react"
 import { useApp } from "@/lib/store"
 import { recommendCandidate, type RecommendationTier } from "@/lib/interview/recommendation"
@@ -13,6 +14,7 @@ import { HiringDecisionManager } from "@/components/recruiter/hiring-decision-mo
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { cn } from "@/lib/utils"
 import { FaceAnalysisReport } from "@/components/face/face-analysis-report"
 import type { InterviewFaceReport } from "@/lib/db/schema"
 import useSWR from "swr"
@@ -99,7 +101,7 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ id: 
   const styles = tierStyles[recommendation.tier]
 
   return (
-    <>
+    <motion.div initial="hidden" animate="visible" variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.06 } } }} className="flex flex-col gap-5">
       <PageHeader
         title={submission.candidateName}
         description={`${submission.assessmentTitle} · ${submission.jobTitle} at ${submission.company} · submitted ${submission.submittedAt}`}
@@ -111,7 +113,7 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ id: 
       />
 
       {/* Recommendation banner — decision support, not an automated verdict. */}
-      <Card className={styles.accent}>
+      <motion.div variants={{ hidden: { opacity: 0, y: 12 }, visible: { opacity: 1, y: 0 } }}><Card className={cn("glass-panel", styles.accent)}>
         <CardHeader>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <CardTitle className="flex items-center gap-2">
@@ -140,7 +142,7 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ id: 
             ))}
           </ul>
         </CardContent>
-      </Card>
+      </Card></motion.div>
 
       {/* Hiring decision & Email Dispatch */}
       <HiringDecisionManager
@@ -155,7 +157,7 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ id: 
         onDecisionSubmitted={(status, note) => setDecision(submission.id, status, note)}
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <motion.div variants={{ hidden: { opacity: 0, y: 12 }, visible: { opacity: 1, y: 0 } }} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           label="Assessment"
           value={result.overallScore === null ? "Pending" : `${result.overallScore}%`}
@@ -164,10 +166,10 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ id: 
         <StatCard label="Interview" value={interview ? `${interview.overall}%` : "—"} icon={<MessagesSquare className="size-4" />} />
         <StatCard label="Skills evaluated" value={`${result.skillsEvaluated} / ${result.skillResults.length}`} />
         <StatCard label="Requiring review" value={result.questionsRequiringReview} />
-      </div>
+      </motion.div>
 
       {/* Interview evaluation bridge — the two halves of the platform meet here. */}
-      <Card>
+      <motion.div variants={{ hidden: { opacity: 0, y: 12 }, visible: { opacity: 1, y: 0 } }}><Card className="glass-panel">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <MessagesSquare className="size-4 text-primary" /> Interview evaluation
@@ -218,30 +220,30 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ id: 
             </p>
           )}
         </CardContent>
-      </Card>
+      </Card></motion.div>
 
       {/* Integrity + similarity evidence — for human review, never proof. */}
       {(submission.integrity || submission.similarity) && (
-        <div className="flex flex-col gap-3">
+        <motion.div variants={{ hidden: { opacity: 0, y: 12 }, visible: { opacity: 1, y: 0 } }} className="flex flex-col gap-3">
           <h2 className="text-lg font-semibold tracking-tight">Integrity &amp; similarity evidence</h2>
           <IntegrityReviewPanel integrity={submission.integrity} similarity={submission.similarity} />
-        </div>
+        </motion.div>
       )}
 
       {/* Face analysis report — behavioral observations for human review */}
       {faceReport && (
-        <div className="flex flex-col gap-3">
+        <motion.div variants={{ hidden: { opacity: 0, y: 12 }, visible: { opacity: 1, y: 0 } }} className="flex flex-col gap-3">
           <h2 className="text-lg font-semibold tracking-tight">Face analysis report</h2>
           <FaceAnalysisReport
             report={faceReport}
             registration={faceRegistration}
             candidateName={submission.candidateName}
           />
-        </div>
+        </motion.div>
       )}
 
       {/* Full assessment breakdown, including per-question scoring. */}
       <AssessmentResultView result={result} showAnswers />
-    </>
+    </motion.div>
   )
 }

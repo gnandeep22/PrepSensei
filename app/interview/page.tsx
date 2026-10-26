@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { Suspense, useCallback, useEffect, useRef, useState } from "react"
 import { useSearchParams } from "next/navigation"
+import { motion } from "motion/react"
 import { AlertTriangle, ArrowLeft, ArrowRight, Bot, Camera, CameraOff, CheckCircle2, Eye, EyeOff, Loader2, Mic, MicOff, PhoneOff, RotateCcw, ScanFace, Send, ShieldCheck, Sparkles, Trash2, UserRound, Users } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useApp } from "@/lib/store"
@@ -437,10 +438,10 @@ function InterviewContent() {
             <ShieldCheck className="size-5 text-primary mt-0.5 shrink-0" />
             <div>
               <p className="font-semibold text-foreground text-sm flex items-center gap-1.5">
-                🔒 Private Practice Session Complete
+                 Private practice session complete
               </p>
               <p className="text-xs text-muted-foreground mt-0.5">
-                This mock interview was conducted for your personal skill preparation. Your responses, evaluation score, and proctoring metrics are completely private to you and are <strong>never shared with recruiters or employers</strong>.
+                 This practice interview is for your preparation. Your responses, score, and proctoring signals are not shared with recruiters.
               </p>
             </div>
           </div>
@@ -555,29 +556,29 @@ function InterviewContent() {
       />
 
       {stage === "setup" ? (
-        <Card className="max-w-2xl">
+        <Card className="glass-panel max-w-2xl border-primary/20 shadow-xl shadow-black/10">
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>Set up your practice interview</CardTitle>
               <Badge variant="outline" className="border-primary/40 text-primary text-xs">
-                🔒 Private Practice Mode
+                Private practice
               </Badge>
             </div>
             <CardDescription>{total} questions tailored to your chosen job role and interview type.</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
-            <div className="rounded-lg border border-primary/30 bg-primary/5 p-3.5 flex items-start gap-3">
+            <div className="rounded-2xl border border-primary/25 bg-primary/[0.06] p-4 flex items-start gap-3">
               <ShieldCheck className="size-5 text-primary mt-0.5 shrink-0" />
               <div className="text-xs">
-                <p className="font-semibold text-foreground">100% Private Practice Environment</p>
+                 <p className="font-semibold text-foreground">Private practice session</p>
                 <p className="text-muted-foreground mt-0.5">
-                  This mock session is for your own personal skill preparation. Real-time proctoring metrics (eye gaze tracking and identity verification) are provided for your learning, but <strong>nothing is ever submitted to recruiters</strong>.
+                   This session is for your preparation. Gaze and identity signals help you review your delivery and are not shared with recruiters.
                 </p>
               </div>
             </div>
 
             {(job.id.startsWith("recruiter-job-") || (job as any).source === "recruiter") && (
-              <div className="rounded-lg border border-border bg-muted/40 p-3 flex items-center justify-between gap-3 text-xs">
+              <div className="rounded-2xl border border-border/70 bg-background/35 p-3.5 flex items-center justify-between gap-3 text-xs">
                 <span className="text-muted-foreground">
                   Practicing for <strong className="text-foreground">{job.title} at {job.company}</strong>. Received an official invitation?
                 </span>
@@ -596,7 +597,7 @@ function InterviewContent() {
             </Field>
             <div className="flex flex-col gap-1.5">
               <span className="text-xs font-medium text-muted-foreground">Interview type</span>
-              <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Interview type">
+              <div className="grid grid-cols-3 gap-2 rounded-2xl border border-border/60 bg-background/30 p-1" role="radiogroup" aria-label="Interview type">
                 {types.map((t) => (
                   <button
                     key={t}
@@ -604,8 +605,8 @@ function InterviewContent() {
                     role="radio"
                     aria-checked={type === t}
                     onClick={() => setType(t)}
-                    className={`rounded-md border px-3 py-2.5 text-sm font-medium transition-colors ${
-                      type === t ? "border-primary bg-primary/5 text-primary" : "border-border hover:bg-muted"
+                    className={`rounded-xl border px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
+                      type === t ? "border-primary/45 bg-primary/12 text-primary shadow-sm" : "border-transparent hover:bg-muted/70"
                     }`}
                   >
                     {t}
@@ -614,19 +615,18 @@ function InterviewContent() {
               </div>
             </div>
             <Notice>
-              You will join a video-style room with an AI interviewer. Camera and microphone are optional — you can turn them
-              off and type your answers instead. We never record or analyse your video.
+              Practice role-specific questions by voice or text. Camera and microphone are optional, and practice signals stay private to this session.
             </Notice>
-            <Button onClick={handleProceedToInterview} className="self-start gap-2">
+            <Button onClick={handleProceedToInterview} className="self-start gap-2 shadow-lg shadow-primary/20">
               Enter Interview Room <ArrowRight className="size-4" />
             </Button>
           </CardContent>
         </Card>
       ) : (
         <div className="flex flex-col gap-5">
-          <Card className="overflow-hidden border-border/80 shadow-md">
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}><Card className="glass-panel overflow-hidden border-primary/20 shadow-xl shadow-black/15">
             {/* Header: Clean, professional top bar with status & progress */}
-            <CardHeader className="border-b border-border/80 bg-gradient-to-r from-card via-muted/20 to-card px-4 py-4 sm:px-6">
+            <CardHeader className="border-b border-border/70 bg-background/20 px-4 py-4 sm:px-6">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex flex-col gap-1">
                   <div className="flex items-center gap-2">
@@ -686,7 +686,7 @@ function InterviewContent() {
                       <AlertTriangle className="size-5 shrink-0 text-destructive" />
                       <div className="flex flex-col">
                         <span className="font-bold text-xs sm:text-sm">
-                          ⚠ Identity Mismatch Detected
+                           Identity mismatch detected
                         </span>
                         <span className="text-xs opacity-90">
                           The vision system detected that the person in frame does not match {candidateDisplayName}&apos;s biometrics.
@@ -700,7 +700,7 @@ function InterviewContent() {
                       <Users className="size-5 shrink-0 text-amber-600 dark:text-amber-400" />
                       <div className="flex flex-col">
                         <span className="font-bold text-xs sm:text-sm">
-                          ⚠ Multiple Persons Detected ({Math.max(2, analysis.faceCount)} faces in frame)
+                           Multiple people detected ({Math.max(2, analysis.faceCount)} faces in frame)
                         </span>
                         <span className="text-xs opacity-90">
                           Ensure only the candidate is present in front of the camera during the session.
@@ -714,7 +714,7 @@ function InterviewContent() {
                       <Camera className="size-5 shrink-0 text-amber-600 dark:text-amber-400" />
                       <div className="flex flex-col">
                         <span className="font-bold text-xs sm:text-sm">
-                          ⚠ Camera Movement Detected
+                           Camera movement detected
                         </span>
                         <span className="text-xs opacity-90">
                           Camera angle or device shift detected. Please keep your device stable on a flat surface.
@@ -752,7 +752,7 @@ function InterviewContent() {
 
               {/* Sleek Glassmorphic Proctoring Telemetry Dock */}
               {analysis.running && (
-                <div className="flex flex-wrap items-center justify-center gap-2 rounded-2xl border border-border/80 bg-muted/30 px-3 py-2 text-xs backdrop-blur-sm">
+                <div className="glass-panel flex flex-wrap items-center justify-center gap-2 rounded-2xl border-border/70 bg-background/30 px-3 py-2 text-xs">
                   {analysis.faceDetected && analysis.identityMismatch ? (
                     <Badge variant="outline" className="border-destructive/60 bg-destructive/15 text-destructive font-bold animate-pulse flex items-center gap-1">
                       <AlertTriangle className="size-3" /> Identity Mismatch
@@ -845,7 +845,7 @@ function InterviewContent() {
               </div>
 
               {/* Candidate Response Studio */}
-              <div className="flex flex-col gap-2.5 rounded-2xl border border-border/80 bg-card/60 p-4 shadow-sm backdrop-blur-sm transition-all duration-200 focus-within:border-primary/60 focus-within:ring-2 focus-within:ring-primary/20">
+              <div className="glass-panel flex flex-col gap-2.5 rounded-2xl border-border/80 bg-background/25 p-4 shadow-sm transition-all duration-200 focus-within:border-primary/60 focus-within:ring-2 focus-within:ring-primary/20">
                 <div className="flex items-center justify-between gap-2 border-b border-border/60 pb-2.5">
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-semibold text-foreground tracking-tight">
@@ -937,10 +937,10 @@ function InterviewContent() {
                 </p>
               )}
             </CardContent>
-          </Card>
+          </Card></motion.div>
 
           {/* Transcript Log */}
-          <Card className="rounded-2xl border-border/80 shadow-xs">
+          <Card className="glass-panel rounded-2xl border-border/70 shadow-xs">
             <CardHeader className="py-3 px-4 sm:px-6 border-b border-border/60">
               <div className="flex items-center justify-between">
                 <div>

@@ -100,7 +100,7 @@ export function AgenticJobCreator({ onJobPublished }: { onJobPublished?: (result
   }
 
   return (
-    <Card className="border-primary/20 bg-gradient-to-b from-card to-primary/[0.02]">
+    <Card className="glass-panel border-primary/20">
       <CardHeader>
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">

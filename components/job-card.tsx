@@ -35,7 +35,7 @@ export function JobCard({
       className={cn(
         "transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md",
         isDirectRecruiter
-          ? "border-emerald-500/40 bg-gradient-to-r from-card via-card to-emerald-500/[0.04] hover:border-emerald-500/60"
+          ? "border-emerald-500/40 bg-success/[0.04] hover:border-emerald-500/60"
           : "border-border/70 hover:border-border"
       )}
     >

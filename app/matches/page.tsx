@@ -84,7 +84,7 @@ export default function MatchesPage() {
       <motion.div variants={itemVariants}>
         <PageHeader
           title="Job Matches & Alignment"
-          description="All open roles ranked objectively by how well your verified profile evidence and technical skills match their required competencies."
+        description="Open roles ranked by fit with your profile and skills."
           actions={
             <Button variant="outline" size="sm" nativeButton={false} render={<Link href="/jobs" />} className="text-xs gap-1.5 font-medium">
               <Briefcase className="size-3.5" /> Browse All Jobs

@@ -112,15 +112,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   // Auth pages render with Apple ambient illumination and quick ThemeToggle
   if (isAuthRoute) {
     return (
-      <div className="relative flex min-h-svh items-center justify-center bg-background px-4 py-8">
-        {/* Ambient illumination glow */}
-        <div
-          aria-hidden="true"
-          className="pointer-events-none fixed inset-0 -z-10 flex items-center justify-center overflow-hidden"
-        >
-          <div className="size-[540px] rounded-full bg-primary/10 blur-[130px] dark:bg-primary/15" />
-          <div className="size-[420px] rounded-full bg-emerald-500/5 blur-[110px] dark:bg-emerald-500/10" />
-        </div>
+      <div className="app-frame relative flex min-h-svh items-center justify-center bg-background px-4 py-8">
+        <div aria-hidden="true" className="ambient-backdrop pointer-events-none fixed inset-0 -z-10 overflow-hidden"><div className="ambient-orb ambient-orb-one" /><div className="ambient-orb ambient-orb-two" /></div>
         <div className="fixed top-4 right-4 z-50">
           <ThemeToggle />
         </div>
@@ -141,14 +134,11 @@ export function AppShell({ children }: { children: ReactNode }) {
   // Public route access when not logged in (e.g. /how-it-works product tour)
   if (!session?.user && isPublicRoute) {
     return (
-      <div className="relative flex min-h-svh flex-col bg-background text-foreground antialiased selection:bg-primary/20">
-        <div aria-hidden="true" className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
-          <div className="absolute -top-32 -left-32 size-[520px] rounded-full bg-primary/[0.08] blur-[140px] dark:bg-primary/[0.12]" />
-          <div className="absolute top-1/3 -right-32 size-[560px] rounded-full bg-indigo-500/[0.05] blur-[150px] dark:bg-indigo-500/[0.08]" />
-        </div>
+      <div className="app-frame relative flex min-h-svh flex-col bg-background text-foreground antialiased selection:bg-primary/20">
+        <div aria-hidden="true" className="ambient-backdrop pointer-events-none fixed inset-0 -z-10 overflow-hidden"><div className="ambient-orb ambient-orb-one" /><div className="ambient-orb ambient-orb-two" /></div>
         <header className="sticky top-0 z-40 w-full border-b border-border/40 bg-background/80 backdrop-blur-xl px-4 py-3 sm:px-6 lg:px-8 flex items-center justify-between">
           <Link href="/sign-in" className="flex items-center gap-2 group">
-            <div className="flex size-7 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-rose-600 text-white shadow-xs">
+            <div className="brand-mark flex size-7 items-center justify-center rounded-xl text-white shadow-xs">
               <GraduationCap className="size-4" />
             </div>
             <span className="text-sm font-bold tracking-tight text-foreground">PrepSensei</span>
@@ -237,15 +227,10 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <NotificationProvider>
-      <div className="relative flex min-h-svh bg-background text-foreground antialiased overflow-x-hidden">
-        {/* VisionOS Ambient Illumination: soft atmospheric light orbs so frosted glass cards refract real ambient lighting */}
-        <div
-          aria-hidden="true"
-          className="pointer-events-none fixed inset-0 -z-10 overflow-hidden"
-        >
-          <div className="absolute -top-32 -left-32 size-[520px] rounded-full bg-primary/[0.08] blur-[140px] dark:bg-primary/[0.12]" />
-          <div className="absolute top-1/3 -right-32 size-[560px] rounded-full bg-indigo-500/[0.05] blur-[150px] dark:bg-indigo-500/[0.08]" />
-          <div className="absolute -bottom-32 left-1/4 size-[500px] rounded-full bg-emerald-500/[0.04] blur-[130px] dark:bg-emerald-500/[0.07]" />
+      <div className="app-frame relative flex min-h-svh bg-background text-foreground antialiased overflow-x-hidden">
+        <div aria-hidden="true" className="ambient-backdrop pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+          <div className="ambient-orb ambient-orb-one" />
+          <div className="ambient-orb ambient-orb-two" />
         </div>
 
         {/* Left Floating Glass Sidebar (matching WWDC25 Session 219 reference photo) */}

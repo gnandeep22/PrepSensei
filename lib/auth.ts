@@ -1,9 +1,10 @@
 import net from "node:net"
 import dns from "node:dns"
 
-// Force IPv4-first and disable dual-stack autoselection to prevent IPv6 ENETUNREACH/ETIMEDOUT to Neon AWS
+// Prefer IPv4 for Neon, but keep address failover enabled. Neon pooler hostnames
+// can resolve to several IPv4 endpoints and one endpoint may be temporarily cold.
 if (typeof (net as any).setDefaultAutoSelectFamily === "function") {
-  ;(net as any).setDefaultAutoSelectFamily(false)
+  ;(net as any).setDefaultAutoSelectFamily(true)
 }
 if (typeof (dns as any).setDefaultResultOrder === "function") {
   ;(dns as any).setDefaultResultOrder("ipv4first")

@@ -250,8 +250,8 @@ export default function StudyPlanPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="AI-Powered Study Plan"
-        description="A tailored 4-week interview preparation roadmap powered by Gemini AI. Researches web resources and official documentation to bridge your exact skill gaps for your target job."
+         title="Study plan"
+         description="A focused four-week roadmap built around your target role and current skill gaps."
         actions={
           <div className="flex flex-wrap items-center gap-3">
             <Field label="Target Job" htmlFor="target-job-select">
@@ -289,7 +289,7 @@ export default function StudyPlanPage() {
       />
 
       {/* Target Job & Strategy Overview Card */}
-      <Card className="border-primary/20 bg-gradient-to-b from-card to-primary/[0.02]">
+      <Card className="glass-panel border-primary/20">
         <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center gap-2">
@@ -332,7 +332,7 @@ export default function StudyPlanPage() {
               <Sparkles className="size-6" />
             </div>
             <div>
-              <p className="text-sm font-semibold">Gemini AI is crafting your study plan…</p>
+              <p className="text-sm font-semibold">Building your study plan…</p>
               <p className="text-xs text-muted-foreground mt-0.5 max-w-md">
                 Researching authentic documentation, open-source repositories, and technical interview benchmarks for{" "}
                 <strong>{job.title}</strong> at <strong>{job.company}</strong>.
@@ -545,4 +545,3 @@ function DynamicResourceIcon({ iconName }: { iconName: PlatformInfo["iconName"] 
       return <Globe className="size-2.5 text-muted-foreground" />
   }
 }
-

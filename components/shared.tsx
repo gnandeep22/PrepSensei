@@ -8,15 +8,15 @@ export function PageHeader({
   description,
   actions,
 }: {
-  title: string
+    title: ReactNode
   description?: string
   actions?: ReactNode
 }) {
   return (
     <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between pb-1">
       <div className="flex flex-col gap-0.5">
-        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground text-balance">{title}</h1>
-        {description && <p className="max-w-2xl text-xs text-muted-foreground leading-normal text-pretty">{description}</p>}
+        <h1 className="text-2xl font-semibold tracking-[-0.035em] text-foreground text-balance sm:text-3xl">{title}</h1>
+        {description && <p className="mt-1 max-w-2xl text-sm leading-relaxed text-muted-foreground text-pretty">{description}</p>}
       </div>
       {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
     </div>

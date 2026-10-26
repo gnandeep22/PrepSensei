@@ -41,7 +41,7 @@ export default function AgenticJobCreatorPage() {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Agentic Job & Interview Creator"
-        description="Provide a brief prompt about your hiring needs. The AI Agent will draft a comprehensive Job Description, generate tailored technical screening questions, and publish directly to candidates."
+        description="Describe the role and generate a job brief with screening questions."
         actions={
           <Button variant="outline" nativeButton={false} render={<Link href="/recruiter" />}>
             <ArrowLeft className="size-4" /> Back to Overview

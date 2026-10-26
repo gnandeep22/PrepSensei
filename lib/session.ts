@@ -10,8 +10,15 @@ import { eq } from "drizzle-orm"
  * Route handlers must use this instead of trusting any client-sent user id.
  */
 export async function getSessionUser() {
-  const session = await auth.api.getSession({ headers: await headers() })
-  return session?.user ?? null
+  try {
+    const session = await auth.api.getSession({ headers: await headers() })
+    return session?.user ?? null
+  } catch (err) {
+    // A temporary database/DNS outage must not turn the sign-in page into a
+    // server error overlay. Protected APIs still reject the absent session.
+    console.error("[getSessionUser] session lookup unavailable:", err)
+    return null
+  }
 }
 
 /**
@@ -43,4 +50,3 @@ export async function isCandidateFaceRegistered(userId: string): Promise<boolean
     return false
   }
 }
-

@@ -123,7 +123,7 @@ export function AiShortlistModal({
             )}
 
             {/* Why Top Candidate Chosen Box */}
-            <div className="rounded-xl border border-primary/30 bg-gradient-to-r from-primary/[0.07] via-card to-card p-4 shadow-2xs">
+            <div className="glass-panel rounded-xl border-primary/30 bg-primary/[0.04] p-4 shadow-2xs">
               <div className="flex items-center gap-2 mb-2">
                 <Award className="size-4 text-primary" />
                 <h4 className="text-sm font-bold text-foreground">
@@ -141,7 +141,7 @@ export function AiShortlistModal({
                   <UserCheck className="size-3 text-emerald-500" /> {report.ranking.filter((r) => r.recommendedAction === "advance" || r.recommendedAction === "shortlist").length} Selected
                 </span>
                 <span className="flex items-center gap-1">
-                  <ShieldCheck className="size-3 text-emerald-500" /> 100% Resume Citations Audited
+                  <ShieldCheck className="size-3 text-emerald-500" /> Resume citations audited
                 </span>
               </div>
             </div>

@@ -68,7 +68,7 @@ export default function ResumePage() {
     <div className="flex flex-col gap-6 animate-in fade-in-50 duration-300">
       <PageHeader
         title="Resume Analyzer & AI OCR"
-        description="Upload your resume in PDF or Word format. Our multi-engine pipeline extracts structured candidate evidence, work history, and technical competencies."
+        description="Upload a PDF or Word resume to build your profile automatically."
         actions={
           <div className="flex items-center gap-2">
             <Badge variant="outline" className="border-primary/30 bg-primary/10 text-primary text-xs py-1 gap-1.5 hidden sm:inline-flex">
@@ -82,7 +82,7 @@ export default function ResumePage() {
       />
 
       {/* Stepper info card */}
-      <Card className="border-primary/20 bg-gradient-to-r from-primary/[0.03] via-card to-card">
+      <Card className="glass-panel border-primary/20">
         <CardContent className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-5">
           <div className="flex items-center gap-3">
             <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">

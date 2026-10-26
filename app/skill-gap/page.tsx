@@ -114,7 +114,7 @@ export default function SkillGapPage() {
     <>
       <PageHeader
         title="RAG AI Skill Gap Analysis"
-        description="Ground-truth semantic analysis comparing your verified resume against this specific job description to isolate exact hiring hurdles."
+        description="Compare your profile with the target role and focus on the gaps that matter."
         actions={
           <div className="flex flex-wrap items-center gap-3">
             <Field label="Target job" htmlFor="job">
@@ -136,7 +136,7 @@ export default function SkillGapPage() {
                 className="gap-1.5 text-xs h-9"
               >
                 <RefreshCw className={`size-3.5 ${loading ? "animate-spin" : ""}`} />
-                {loading ? "Analyzing…" : "Re-run RAG Analysis"}
+                {loading ? "Analyzing…" : "Refresh analysis"}
               </Button>
             </div>
           </div>
@@ -144,7 +144,7 @@ export default function SkillGapPage() {
       />
 
       {/* RAG Engine Status / Grounding Evidence Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/25 bg-gradient-to-r from-primary/[0.08] via-background to-primary/[0.03] p-4 shadow-xs">
+      <div className="glass-panel flex flex-wrap items-center justify-between gap-3 rounded-xl border-primary/25 bg-primary/[0.05] p-4 shadow-xs">
         <div className="flex items-center gap-3">
           <div className="flex size-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-xs">
             <Sparkles className="size-5" />
@@ -503,7 +503,7 @@ export default function SkillGapPage() {
 
       {/* Anticipated Interview Questions Targeting Identified Gaps */}
       {ragAnalysis && ragAnalysis.interviewQuestionsOnGaps && ragAnalysis.interviewQuestionsOnGaps.length > 0 && (
-        <Card className="border-primary/20 bg-gradient-to-b from-card to-primary/[0.02]">
+        <Card className="glass-panel border-primary/20">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <div>

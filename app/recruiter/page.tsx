@@ -207,7 +207,7 @@ export default function RecruiterOverviewPage() {
                 </div>
                 <h4 className="font-semibold text-sm">Agentic JD Creator</h4>
                 <p className="text-xs text-muted-foreground">
-                  Generate job descriptions and technical screening questions using Gemini AI prompts.
+                   Create job descriptions and screening questions from a role brief.
                 </p>
               </div>
               <Button size="sm" className="mt-4 w-full" nativeButton={false} render={<Link href="/recruiter/job-creator" />}>

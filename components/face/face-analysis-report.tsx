@@ -1,6 +1,7 @@
 "use client"
 
 import { AlertTriangle, Camera, CheckCircle2, Eye, EyeOff, MessageSquare, ScanFace, Shield, ShieldCheck, Users } from "lucide-react"
+import { motion } from "motion/react"
 import type { InterviewFaceReport } from "@/lib/db/schema"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -57,16 +58,21 @@ export function FaceAnalysisReport({
   const intervieweePhoto = report.intervieweePhoto || report.entryPhoto || null
 
   return (
-    <div className="flex flex-col gap-4">
+    <motion.div
+      initial="hidden"
+      animate="visible"
+      variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.055 } } }}
+      className="flex flex-col gap-4"
+    >
       {/* High-Priority Recruiter Audit Alert: Identity Mismatch */}
       {isMismatchDetected && (
-        <div className="rounded-xl border border-destructive/60 bg-destructive/10 p-4 shadow-sm flex items-start gap-3.5 animate-pulse">
+        <div className="rounded-xl border border-destructive/60 bg-destructive/10 p-4 shadow-sm flex items-start gap-3.5">
           <div className="rounded-full bg-destructive/20 p-2 text-destructive shrink-0">
             <AlertTriangle className="size-6" />
           </div>
           <div className="flex flex-col gap-1">
             <h3 className="text-base font-bold text-destructive flex items-center gap-2">
-              🚨 CRITICAL AUDIT ALERT: Candidate Identity Mismatch Detected
+               Critical audit alert: candidate identity mismatch detected
             </h3>
             <p className="text-xs text-foreground/90 leading-relaxed">
               The vision AI proctoring system determined that the person who attended this interview did <strong>NOT</strong> match the biometric face descriptor registered to <strong>{candidateName || "the candidate"}</strong> ({report.mismatchCount} mismatch checks logged).
@@ -86,7 +92,7 @@ export function FaceAnalysisReport({
           </div>
           <div className="flex flex-col gap-1">
             <h3 className="text-base font-bold text-amber-700 dark:text-amber-300">
-              ⚠ PROCTORING AUDIT: Multiple Faces Detected ({report.multipleFaceCount} violations)
+               Proctoring alert: multiple faces detected ({report.multipleFaceCount} events)
             </h3>
             <p className="text-xs text-foreground/90 leading-relaxed">
               Two or more individuals were detected in the video frame during this interview session. Please inspect the proctoring timeline below for unauthorized room assistance.
@@ -95,7 +101,8 @@ export function FaceAnalysisReport({
         </div>
       )}
 
-      <Card>
+      <motion.div variants={{ hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0 } }}>
+      <Card className="report-card overflow-hidden border-primary/20">
         <CardHeader>
           <div className="flex items-center justify-between gap-3">
             <CardTitle className="flex items-center gap-2 text-base">
@@ -109,11 +116,18 @@ export function FaceAnalysisReport({
             Behavioural observations and biometric identity verification throughout the interview.
           </CardDescription>
         </CardHeader>
+        <CardContent className="grid grid-cols-2 gap-2 border-t border-border/50 pt-4 sm:grid-cols-4">
+          <div className="rounded-xl border border-border/60 bg-background/30 p-3"><p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Identity</p><p className={cn("mt-1 text-sm font-semibold", isMismatchDetected ? "text-destructive" : report.identityVerified ? "text-success" : "text-warning")}>{isMismatchDetected ? "Mismatch" : report.identityVerified ? "Verified" : "Pending"}</p></div>
+          <div className="rounded-xl border border-border/60 bg-background/30 p-3"><p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Camera facing</p><p className="mt-1 text-sm font-semibold tabular-nums">{report.gazeTowardPercent}%</p></div>
+          <div className="rounded-xl border border-border/60 bg-background/30 p-3"><p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Observed signals</p><p className="mt-1 text-sm font-semibold tabular-nums">{report.events.length}</p></div>
+          <div className="rounded-xl border border-border/60 bg-background/30 p-3"><p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Review state</p><p className="mt-1 text-sm font-semibold">Human review</p></div>
+        </CardContent>
       </Card>
+      </motion.div>
 
       {/* Side-by-side Biometric Face Comparison (Registered vs Interviewee) */}
       {(regPhoto || intervieweePhoto || isMismatchDetected || report.identityVerified) && (
-        <Card className="border-border/80 shadow-sm overflow-hidden">
+        <motion.div variants={{ hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0 } }}><Card className="report-card border-border/80 shadow-sm overflow-hidden">
           <CardHeader className="pb-3 border-b border-border/60 bg-muted/20">
             <div className="flex items-center justify-between gap-2">
               <CardTitle className="flex items-center gap-2 text-sm font-semibold">
@@ -132,7 +146,7 @@ export function FaceAnalysisReport({
               >
                 {isMismatchDetected ? (
                   <>
-                    <AlertTriangle className="size-3" /> ⚠ Identity Mismatch Detected
+                     <AlertTriangle className="size-3" /> Identity mismatch detected
                   </>
                 ) : report.identityVerified ? (
                   <>
@@ -230,12 +244,12 @@ export function FaceAnalysisReport({
               </div>
             </div>
           </CardContent>
-        </Card>
+        </Card></motion.div>
       )}
 
       <div className="grid gap-4 md:grid-cols-2">
         {/* Identity Verification */}
-        <Card>
+        <motion.div variants={{ hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0 } }}><Card className="report-card">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <Shield className="size-4" /> Identity Verification
@@ -293,10 +307,10 @@ export function FaceAnalysisReport({
               tone={(report.cameraMovementCount ?? 0) > 2 ? "warning" : "muted"}
             />
           </CardContent>
-        </Card>
+        </Card></motion.div>
 
         {/* Eye/Gaze Analysis */}
-        <Card>
+        <motion.div variants={{ hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0 } }}><Card className="report-card">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <Eye className="size-4" /> Eye Contact / Gaze Analysis
@@ -352,11 +366,11 @@ export function FaceAnalysisReport({
               </div>
             )}
           </CardContent>
-        </Card>
+        </Card></motion.div>
       </div>
 
       {/* Lip/Mouth Analysis */}
-      <Card>
+      <motion.div variants={{ hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0 } }}><Card className="report-card">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <MessageSquare className="size-4" /> Lip / Mouth Movement Analysis
@@ -401,10 +415,10 @@ export function FaceAnalysisReport({
             </div>
           )}
         </CardContent>
-      </Card>
+      </Card></motion.div>
 
       {/* Overall Summary */}
-      <Card>
+      <motion.div variants={{ hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0 } }}><Card className="report-card">
         <CardHeader>
           <CardTitle className="text-base">Overall Technical Summary</CardTitle>
           <CardDescription className="text-pretty">
@@ -467,8 +481,8 @@ export function FaceAnalysisReport({
             )}
           </ul>
         </CardContent>
-      </Card>
-    </div>
+      </Card></motion.div>
+    </motion.div>
   )
 }
 

@@ -217,7 +217,7 @@ export default function JobsPage() {
       <motion.div variants={itemVariants}>
         <PageHeader
           title="Find Jobs & Opportunities"
-          description="Explore roles directly published by PrepSensei recruiters alongside verified live internet market listings curated for your career awareness."
+          description="Browse recruiter roles and selected live market listings."
           actions={
             <div className="flex items-center gap-2">
               <Badge variant="outline" className="border-primary/30 bg-primary/10 text-primary font-medium">

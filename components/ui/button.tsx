@@ -8,11 +8,11 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "liquid-glass-btn-primary text-primary-foreground font-semibold",
+          "glass-button-primary text-primary-foreground font-semibold",
         outline:
-          "liquid-glass-btn-glass text-foreground hover:text-primary",
+          "glass-button-secondary text-foreground hover:text-primary",
         secondary:
-          "border border-white/30 dark:border-white/12 bg-secondary/80 dark:bg-secondary/60 backdrop-blur-lg text-secondary-foreground hover:bg-secondary active:scale-[0.97]",
+          "glass-button-muted border border-white/10 bg-secondary/70 text-secondary-foreground hover:bg-secondary active:scale-[0.97]",
         ghost:
           "hover:bg-white/40 dark:hover:bg-white/10 hover:text-foreground active:scale-[0.97]",
         destructive:

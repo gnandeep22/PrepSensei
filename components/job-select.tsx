@@ -105,7 +105,7 @@ export function JobSelect({
       )}
 
       {curatedJobs.length > 0 && (
-        <optgroup label="🎯 Curated Roles">
+        <optgroup label="Curated roles">
           {curatedJobs.map((j) => (
             <option key={j.id} value={j.id}>
               {j.title} — {j.company}
