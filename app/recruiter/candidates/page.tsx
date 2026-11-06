@@ -43,6 +43,7 @@ import { IntegrityBadge, ReviewBadge, SimilarityBadge } from "@/components/integ
 import { DecisionBadge } from "@/components/hiring-decision"
 import { HiringDecisionModal } from "@/components/recruiter/hiring-decision-modal"
 import { AiShortlistModal } from "@/components/recruiter/ai-shortlist-modal"
+import { ModelAvailabilityBox } from "@/components/recruiter/model-availability-box"
 import { useApp } from "@/lib/store"
 import { demoJobs, type AssessmentSubmission, type Job } from "@/lib/demo-data"
 import type { ShortlistReport } from "@/app/api/recruiter/shortlist-agent/route"
@@ -112,6 +113,9 @@ export default function CandidatePipelinePage() {
   const [shortlistReport, setShortlistReport] = useState<ShortlistReport | null>(null)
   const [shortlistModalOpen, setShortlistModalOpen] = useState(false)
   const [shortlistLoading, setShortlistLoading] = useState(false)
+  const [winningModel, setWinningModel] = useState<string | null>(null)
+  const [winningModelLabel, setWinningModelLabel] = useState<string | null>(null)
+  const [raceDurationMs, setRaceDurationMs] = useState<number | null>(null)
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null)
   const [statusMessage, setStatusMessage] = useState<string | null>(null)
 
@@ -212,6 +216,9 @@ export default function CandidatePipelinePage() {
       }
 
       setShortlistReport(data.report)
+      setWinningModel(data.winningModel || null)
+      setWinningModelLabel(data.winningModelLabel || null)
+      setRaceDurationMs(data.raceDurationMs || null)
       refreshApplications()
     } catch (err: any) {
       console.error("[Run Shortlist Agent Error]:", err)
@@ -433,6 +440,15 @@ export default function CandidatePipelinePage() {
                     advanced to interview
                   </span>
                 </div>
+              </div>
+
+              {/* Collapsible Model Availability Box (SplitSmart style) */}
+              <div className="w-full mt-3.5 pt-3 border-t border-border/40">
+                <ModelAvailabilityBox
+                  winningModel={winningModel}
+                  winningModelLabel={winningModelLabel}
+                  raceDurationMs={raceDurationMs}
+                />
               </div>
             </CardContent>
           </Card>
@@ -753,6 +769,9 @@ export default function CandidatePipelinePage() {
         onOpenChange={setShortlistModalOpen}
         report={shortlistReport}
         loading={shortlistLoading}
+        winningModel={winningModel}
+        winningModelLabel={winningModelLabel}
+        raceDurationMs={raceDurationMs}
         onApplyDecisions={handleApplyAiDecisions}
       />
 

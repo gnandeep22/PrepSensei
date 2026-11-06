@@ -23,12 +23,16 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import type { ShortlistReport } from "@/app/api/recruiter/shortlist-agent/route"
+import { ModelAvailabilityBox } from "@/components/recruiter/model-availability-box"
 
 interface AiShortlistModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   report: ShortlistReport | null
   loading: boolean
+  winningModel?: string | null
+  winningModelLabel?: string | null
+  raceDurationMs?: number | null
   onApplyDecisions?: (decisions: Array<{ applicationId: string; status: "shortlisted" | "advanced" | "rejected"; note?: string }>) => Promise<void>
 }
 
@@ -37,6 +41,9 @@ export function AiShortlistModal({
   onOpenChange,
   report,
   loading,
+  winningModel,
+  winningModelLabel,
+  raceDurationMs,
   onApplyDecisions,
 }: AiShortlistModalProps) {
   const [applying, setApplying] = useState(false)
@@ -68,7 +75,7 @@ export function AiShortlistModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-4xl max-h-[92vh] overflow-y-auto p-6">
+      <DialogContent className="sm:max-w-4xl w-[95vw] max-h-[88vh] overflow-y-auto p-4 sm:p-6 !fixed !top-1/2 !left-1/2 !-translate-x-1/2 !-translate-y-1/2">
         <DialogHeader className="pb-3 border-b border-border/60">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2">
@@ -93,13 +100,18 @@ export function AiShortlistModal({
         </DialogHeader>
 
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
-            <Loader2 className="size-10 animate-spin text-primary" />
+          <div className="flex flex-col items-center justify-center py-8 gap-4 text-center">
+            <div className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+              <Loader2 className="size-6 animate-spin" />
+            </div>
             <div>
-              <p className="font-semibold text-foreground">Running RAG Shortlisting Agent…</p>
-              <p className="text-xs text-muted-foreground mt-1 max-w-sm">
-                Retrieving candidate resumes, verifying technical claims against JD requirements, and calculating comparative rankings.
+              <p className="font-semibold text-foreground text-sm">Running Multi-Model AI Shortlisting Race…</p>
+              <p className="text-xs text-muted-foreground mt-1 max-w-md mx-auto">
+                All eligible Gemini LLMs are racing concurrently. The fastest model to provide verified structured analysis wins the evaluation.
               </p>
+            </div>
+            <div className="w-full max-w-2xl text-left mt-2">
+              <ModelAvailabilityBox initialOpen={true} />
             </div>
           </div>
         ) : !report ? (
@@ -108,6 +120,13 @@ export function AiShortlistModal({
           </div>
         ) : (
           <div className="flex flex-col gap-5 pt-3">
+            {/* AI Race Winner & Model Availability Ribbon */}
+            <ModelAvailabilityBox
+              winningModel={winningModel}
+              winningModelLabel={winningModelLabel}
+              raceDurationMs={raceDurationMs}
+            />
+
             {appliedSuccess && (
               <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3.5 text-xs text-emerald-600 dark:text-emerald-400 flex items-center justify-between">
                 <div className="flex items-center gap-2">
