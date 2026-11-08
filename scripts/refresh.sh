@@ -38,7 +38,7 @@ disown $NEW_PID 2>/dev/null || true
 echo "⏳ Verifying server availability..."
 HEALTHY=false
 for i in {1..25}; do
-  STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000 2>/dev/null || echo "000")
+  STATUS_CODE=$(curl --noproxy "*" -s -o /dev/null -w "%{http_code}" http://localhost:3000 2>/dev/null || echo "000")
   if [[ "$STATUS_CODE" =~ ^(200|301|302|307|308|404)$ ]]; then
     HEALTHY=true
     break
