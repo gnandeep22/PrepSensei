@@ -31,7 +31,7 @@ import {
 import { useApp } from "@/lib/store"
 import { useSession } from "@/lib/auth-client"
 import { demoEvaluation, demoJobs, type Assessment, type InterviewType } from "@/lib/demo-data"
-import { TOTAL_QUESTIONS, type AnswerResponse, type QAPair, type StartResponse } from "@/lib/interview/protocol"
+import { type AnswerResponse, type QAPair, type StartResponse } from "@/lib/interview/protocol"
 import { useSpeechRecognition, useSpeechSynthesis } from "@/lib/interview/use-speech"
 import { AiInterviewer, type AiState } from "@/components/interview/ai-interviewer"
 import { CandidateVideo } from "@/components/interview/candidate-video"
@@ -286,6 +286,7 @@ function OfficialInterviewContent() {
           type,
           profile,
           screeningQuestions: recruiterAssessment?.questions || [],
+          evaluationCriteria: recruiterAssessment?.evaluationCriteria || targetJob?.evaluationCriteria || [],
           interviewSessionId: interviewSessionId || undefined,
           durationMinutes,
         }),
@@ -347,6 +348,7 @@ function OfficialInterviewContent() {
           profile,
           qa: nextHistory,
           screeningQuestions: recruiterAssessment?.questions || [],
+          evaluationCriteria: recruiterAssessment?.evaluationCriteria || targetJob?.evaluationCriteria || [],
           interviewSessionId: interviewSessionId || undefined,
           timeExpired: Boolean(isForcedExpiry || isTimeExpiredRef.current),
         }),
@@ -356,7 +358,7 @@ function OfficialInterviewContent() {
     } catch {
       result = {
         score: 75,
-        finished: Boolean(isForcedExpiry || isTimeExpiredRef.current || nextHistory.length >= (recruiterAssessment?.questions?.length || TOTAL_QUESTIONS)),
+        finished: Boolean(isForcedExpiry || isTimeExpiredRef.current),
         nextQuestion: null,
         feedback: "Response recorded.",
         evaluation: demoEvaluation,
@@ -601,7 +603,6 @@ function OfficialInterviewContent() {
   if (stage === "setup") {
     const jobTitle = targetJob?.title || "Target Position"
     const company = targetJob?.company || "Hiring Partner"
-    const questionCount = recruiterAssessment?.questions?.length || TOTAL_QUESTIONS
 
     return (
       <div className="mx-auto max-w-3xl py-6 flex flex-col gap-6">
@@ -696,8 +697,8 @@ function OfficialInterviewContent() {
                   </span>
                 </div>
                 <div className="flex justify-between border-b pb-2">
-                  <span className="text-muted-foreground">Total Questions:</span>
-                  <span className="font-semibold text-foreground">{questionCount} Questions</span>
+                  <span className="text-muted-foreground">Interview Format:</span>
+                  <span className="font-semibold text-foreground">Continuous Dynamic Q&amp;A</span>
                 </div>
 
                 <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs flex flex-col gap-1.5 mt-2">
@@ -728,7 +729,6 @@ function OfficialInterviewContent() {
   if (stage === "live") {
     const jobTitle = targetJob?.title || "Target Position"
     const company = targetJob?.company || "Hiring Partner"
-    const totalQuestions = recruiterAssessment?.questions?.length || TOTAL_QUESTIONS
 
     return (
       <div className="mx-auto max-w-4xl py-4 flex flex-col gap-4">
@@ -742,7 +742,7 @@ function OfficialInterviewContent() {
               <h2 className="text-base font-semibold">{jobTitle} · {company}</h2>
             </div>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Question {history.length + 1} of {totalQuestions} · Proctoring Active
+              Interview in progress · Continuous Evaluation · Proctoring Active
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -1011,7 +1011,7 @@ function OfficialInterviewContent() {
               <CardContent className="flex flex-col items-center gap-2 pt-2">
                 <MatchScore score={finalEvaluation.overall} size="lg" label="overall" />
                 <Badge variant="secondary" className="text-xs mt-1">
-                  {history.length} Questions Evaluated
+                  {history.length} Responses Evaluated
                 </Badge>
               </CardContent>
             </Card>
@@ -1026,6 +1026,28 @@ function OfficialInterviewContent() {
                 ))}
               </CardContent>
             </Card>
+
+            {finalEvaluation.criteriaEvaluation && finalEvaluation.criteriaEvaluation.length > 0 && (
+              <Card className="md:col-span-3">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm">Recruiter Evaluation Criteria Assessment</CardTitle>
+                  <CardDescription className="text-xs">Candidate proficiency evaluated against job-specific criteria</CardDescription>
+                </CardHeader>
+                <CardContent className="grid gap-2.5 sm:grid-cols-2 pt-1">
+                  {finalEvaluation.criteriaEvaluation.map((c: any) => (
+                    <div key={c.criterionId} className="flex flex-col gap-1 rounded-lg border border-border/80 bg-muted/20 p-2.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-semibold text-foreground">{c.title}</span>
+                        <Badge variant="outline" className={`text-[10px] ${c.score >= 75 ? "text-emerald-600 border-emerald-500/30" : "text-amber-600 border-amber-500/30"}`}>
+                          {c.score}%
+                        </Badge>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground leading-relaxed">{c.assessment}</p>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
           </div>
         )}
 

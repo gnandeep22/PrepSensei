@@ -185,6 +185,7 @@ export default function AssessmentBuilderPage() {
                 company: draftObj.company || "Hiring Partner",
                 difficulty: "Medium",
                 status: "published",
+                evaluationCriteria: draftObj.evaluationCriteria || [],
                 questions: (draftObj.interviewQuestions || []).map((q: any, idx: number) => ({
                   id: `q-${idx + 1}`,
                   type: "short" as const,

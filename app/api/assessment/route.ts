@@ -41,6 +41,7 @@ export async function GET(req: Request) {
             difficulty: dbAssessment.difficulty,
             status: dbAssessment.status,
             questions: dbAssessment.questions ?? [],
+            evaluationCriteria: dbAssessment.evaluationCriteria ?? [],
             createdAt: dbAssessment.createdAt.toISOString(),
           },
           job: dbJob ?? null,
@@ -76,6 +77,7 @@ export async function GET(req: Request) {
             difficulty: dbAssessment.difficulty,
             status: dbAssessment.status,
             questions: dbAssessment.questions ?? [],
+            evaluationCriteria: dbAssessment.evaluationCriteria ?? [],
             createdAt: dbAssessment.createdAt.toISOString(),
           },
         })

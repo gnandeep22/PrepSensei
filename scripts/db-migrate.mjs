@@ -129,6 +129,10 @@ alter table "application" add column if not exists "decided_at" timestamp;
 -- Tag interview submissions as official (shortlisted/advanced) vs practice
 alter table "submission" add column if not exists "is_practice" boolean not null default false;
 
+-- Evaluation criteria configured by recruiter for continuous AI interview assessment
+alter table "job" add column if not exists "evaluation_criteria" jsonb not null default '[]'::jsonb;
+alter table "assessment" add column if not exists "evaluation_criteria" jsonb not null default '[]'::jsonb;
+
 
 -- Recruiter-authored assessments, owned by the recruiter.
 create table if not exists "assessment" (

@@ -105,38 +105,65 @@ function getQuotaConfig(): GeminiQuotaConfig {
 }
 
 /**
- * Conservative estimation of Gemini API requests and token consumption for a given duration.
- * Based on empirical human candidate pacing (~2.2 minutes per Q&A turn).
+ * Configurable Human Pacing Model:
+ * Baseline normal candidate pacing (~80 seconds per cycle):
+ *   - Question presentation: 10s
+ *   - Candidate thinking & answering: 60s
+ *   - AI evaluation & next-question prep: 10s
+ *
+ * Fast candidate pacing (conservative capacity sizing for rapid responders): ~50 seconds per cycle:
+ *   - Rapid answer submission: ~35s
+ *   - Presentation & AI evaluation: ~15s
+ *   - Yields ~1.2 requests/minute peak burst rate.
  */
-export function estimateConsumptionForDuration(durationMinutes: number): DurationConsumptionEstimate {
-  // Pacing: 2.2 minutes per turn (reading question, formulating thought, speech/text response, AI response presentation)
-  const expectedQuestions = Math.max(2, Math.min(15, Math.round(durationMinutes / 2.2)))
-  // 1 opening question + expected answer evaluation turns
-  const expectedRequests = expectedQuestions + 1
+export const DEFAULT_AVERAGE_CYCLE_SECONDS = 80
+export const DEFAULT_FAST_CYCLE_SECONDS = 50
 
-  // Start turn: ~1100 input tokens (candidate profile + JD + RAG reference context), ~100 output tokens
+/**
+ * Conservative estimation of Gemini API requests and token consumption for a given duration.
+ * Models continuous interviewing where questions continue until the duration timer expires.
+ */
+export function estimateConsumptionForDuration(
+  durationMinutes: number,
+  averageCycleSec = DEFAULT_AVERAGE_CYCLE_SECONDS,
+  fastCycleSec = DEFAULT_FAST_CYCLE_SECONDS
+): DurationConsumptionEstimate {
+  const durationSec = Math.max(300, durationMinutes * 60)
+
+  // Expected Q&A cycles for a normal candidate (e.g. 5m -> ~4, 10m -> 7, 15m -> 11, 20m -> 15, 30m -> 22, 60m -> 45)
+  const expectedQuestions = Math.round(durationSec / averageCycleSec)
+
+  // Fast candidate cycles (conservative capacity planning for rapid responders)
+  const fastCandidateCycles = Math.ceil(durationSec / fastCycleSec)
+
+  // 1 opening question + evaluation/next-question requests
+  const expectedRequests = 1 + fastCandidateCycles
+
+  // Opening question: ~1,100 input tokens (candidate profile, JD, RAG grounding), ~100 output tokens
   const openingInput = 1100
   const openingOutput = 100
 
-  // Evaluation turns: input grows as transcript accumulates (+160 tokens per turn)
+  // Turn token growth model: transcript accumulates previous Q&As (~160 tokens per turn)
   let evalInputSum = 0
   let evalOutputSum = 0
 
-  for (let i = 1; i <= expectedQuestions; i++) {
+  for (let i = 1; i <= fastCandidateCycles; i++) {
     const turnInput = 1200 + i * 160
     evalInputSum += turnInput
-    // Intermediate turns generate ~180 output tokens; final evaluation turn generates ~350 tokens
-    evalOutputSum += i === expectedQuestions ? 350 : 180
+    // Intermediate turns generate ~180 output tokens; final evaluation turn generates ~400 tokens
+    evalOutputSum += i === fastCandidateCycles ? 400 : 180
   }
 
   const estimatedInputTokens = openingInput + evalInputSum
   const estimatedOutputTokens = openingOutput + evalOutputSum
   const estimatedTotalTokens = estimatedInputTokens + estimatedOutputTokens
 
-  // Candidate burst rate: worst case candidate answers quickly (approx 0.85 requests per minute)
-  const peakRpmPerCandidate = 0.85
-  // Peak TPM: average tokens per minute scaled by 1.35 burst factor for longer responses
-  const peakTpmPerCandidate = Math.ceil((estimatedTotalTokens / Math.max(5, durationMinutes)) * 1.35)
+  // Fast candidate burst rate: candidate answering every 50s = 60 / 50 = 1.2 req/min
+  const peakRpmPerCandidate = Math.round((60 / fastCycleSec) * 100) / 100
+
+  // Peak TPM: based on peak turns token size multiplied by peak request rate (with 1.25 safety factor for verbose responses)
+  const latestTurnTokens = 1200 + fastCandidateCycles * 160 + 250
+  const peakTpmPerCandidate = Math.ceil(latestTurnTokens * peakRpmPerCandidate * 1.25)
 
   return {
     durationMinutes,
@@ -270,10 +297,10 @@ export class InterviewCapacityService {
     const effectiveInterviewRpd = config.rpdQuota * interviewQuotaRatio
 
     // Reserve capacity for existing active interviews:
-    // Each active candidate interview holds an ongoing reservation of ~0.85 RPM and ~1800 TPM
-    const activeReservedRpm = metrics.activeInterviewsCount * 0.85
-    const activeReservedTpm = metrics.activeInterviewsCount * 1800
-    const activeReservedRpd = metrics.activeInterviewsCount * 6
+    // Each active candidate interview holds an ongoing reservation based on fast candidate consumption (1.2 RPM, ~3500 TPM, ~18 RPD)
+    const activeReservedRpm = metrics.activeInterviewsCount * 1.2
+    const activeReservedTpm = metrics.activeInterviewsCount * 3500
+    const activeReservedRpd = metrics.activeInterviewsCount * 18
 
     const availableRpm = Math.max(0, effectiveInterviewRpm - metrics.recentRpm - activeReservedRpm)
     const availableTpm = Math.max(0, effectiveInterviewTpm - metrics.recentTpm - activeReservedTpm)

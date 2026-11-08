@@ -212,6 +212,25 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ id: 
                     </ul>
                   </div>
                 </div>
+
+                {interview.criteriaEvaluation && interview.criteriaEvaluation.length > 0 && (
+                  <div className="flex flex-col gap-2 pt-2 border-t border-border/60">
+                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      Recruiter Criteria Assessment
+                    </p>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {interview.criteriaEvaluation.map((c: any) => (
+                        <div key={c.criterionId} className="flex flex-col gap-0.5 rounded border border-border/70 bg-muted/20 p-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-semibold">{c.title}</span>
+                            <span className="text-[11px] font-mono font-bold text-primary">{c.score}%</span>
+                          </div>
+                          <p className="text-[11px] text-muted-foreground">{c.assessment}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           ) : (

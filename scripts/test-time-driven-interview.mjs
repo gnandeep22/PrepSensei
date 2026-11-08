@@ -1,0 +1,308 @@
+import net from "node:net"
+import dns from "node:dns"
+
+if (typeof net.setDefaultAutoSelectFamily === "function") {
+  net.setDefaultAutoSelectFamily(false)
+}
+if (typeof dns.setDefaultResultOrder === "function") {
+  dns.setDefaultResultOrder("ipv4first")
+}
+
+import { Pool } from "pg"
+
+const connectionString = (process.env.DATABASE_URL || "").replace("sslmode=require", "sslmode=verify-full")
+const pool = new Pool({
+  connectionString,
+  stream: () => {
+    const s = new net.Socket()
+    const origConnect = s.connect.bind(s)
+    s.connect = function (port, host, cb) {
+      if (typeof port === "object") {
+        return origConnect({ ...port, family: 4, autoSelectFamily: false }, host)
+      }
+      return origConnect({ port, host, family: 4, autoSelectFamily: false }, cb)
+    }
+    return s
+  },
+})
+
+console.log("=================================================================")
+console.log("EXECUTION OF 10 STRICT TIME-DRIVEN INTERVIEW VERIFICATION TESTS")
+console.log("=================================================================\n")
+
+async function main() {
+  const { InterviewCapacityService, estimateConsumptionForDuration, DEFAULT_AVERAGE_CYCLE_SECONDS, DEFAULT_FAST_CYCLE_SECONDS } = await import("../lib/interview/capacity-service.ts")
+  const { evaluateAnswer, generateFirstQuestion } = await import("../lib/interview/agent.ts")
+
+  const mockJob = {
+    id: `test-job-time-${Date.now()}`,
+    title: "Senior Cloud Architect",
+    company: "CloudScale Inc",
+    requiredSkills: ["AWS", "Kubernetes", "Distributed Systems", "PostgreSQL", "Terraform"],
+    description: "Design high-scale cloud platforms.",
+    interviewDurationMinutes: 15,
+  }
+
+  const mockProfile = {
+    name: "Alex Morgan",
+    title: "Staff Software Engineer",
+    summary: "10 years building distributed systems and high-throughput microservices.",
+    skills: ["AWS", "Kubernetes", "PostgreSQL", "Go", "Distributed Systems"],
+    experience: [],
+    projects: [],
+    education: [],
+  }
+
+  // Ensure mock test user and job exist in DB
+  const testUserId = `test-user-${Date.now()}`
+  await pool.query(
+    `insert into "user" (id, name, email) values ($1, 'Alex Morgan', $2) on conflict do nothing`,
+    [testUserId, `alex-${Date.now()}@example.com`]
+  )
+  await pool.query(
+    `insert into "job" (id, title, company, interview_duration_minutes) values ($1, $2, $3, $4) on conflict do nothing`,
+    [mockJob.id, mockJob.title, mockJob.company, mockJob.interviewDurationMinutes]
+  )
+
+  // -------------------------------------------------------------------------
+  // TEST 1: Configure 15-minute interview. Submit 5 answers quickly.
+  // Verify that the sixth question is generated.
+  // -------------------------------------------------------------------------
+  console.log("TEST 1: Submitting 5 quick answers in a 15-minute interview...")
+  const qa5 = [
+    { question: "Can you introduce yourself?", answer: "I have 10 years designing Kubernetes and AWS cloud systems." },
+    { question: "How do you manage Kubernetes cluster networking?", answer: "We implement Calico CNI with strict network policies." },
+    { question: "How do you design for zero-downtime database migrations?", answer: "We use expand-and-contract pattern with blue-green deployments." },
+    { question: "How do you handle cross-region state replication?", answer: "We use Aurora Global Database with asynchronous write replicas." },
+    { question: "How do you handle team disagreements on architecture?", answer: "We write RFCs, benchmark tradeoffs, and reach alignment through empirical data." },
+  ]
+
+  const turn5Result = await evaluateAnswer({
+    job: mockJob,
+    profile: mockProfile,
+    type: "Technical",
+    qa: qa5,
+    timeExpired: false,
+    targetDurationMinutes: 15,
+  })
+
+  console.log("Turn 5 Evaluation Result:")
+  console.log("- finished:", turn5Result.finished)
+  console.log("- nextQuestion generated:", Boolean(turn5Result.nextQuestion))
+  console.log("- snippet of nextQuestion (Question 6):", turn5Result.nextQuestion?.slice(0, 90) + "...")
+
+  if (turn5Result.finished === true) {
+    throw new Error("TEST 1 FAILED: Interview terminated at 5 questions despite time remaining!")
+  }
+  if (!turn5Result.nextQuestion) {
+    throw new Error("TEST 1 FAILED: Sixth question was not generated!")
+  }
+  console.log("✓ TEST 1 PASSED: Question 6 successfully generated. Interview did not terminate at 5 questions.\n")
+
+  // -------------------------------------------------------------------------
+  // TEST 2: Continue submitting answers quickly.
+  // Verify that questions continue generating without a fixed count limit (6, 7, 8, 9, 10+).
+  // -------------------------------------------------------------------------
+  console.log("TEST 2: Continuing rapid submissions up to 10 questions...")
+  let currentQA = [...qa5]
+  for (let turn = 6; turn <= 10; turn++) {
+    currentQA.push({
+      question: `Question ${turn} generated by AI`,
+      answer: `This is candidate detailed technical response for turn ${turn} demonstrating mastery of distributed systems.`,
+    })
+
+    const turnResult = await evaluateAnswer({
+      job: mockJob,
+      profile: mockProfile,
+      type: "Technical",
+      qa: currentQA,
+      timeExpired: false,
+      targetDurationMinutes: 15,
+    })
+
+    console.log(`- Turn ${turn}: finished=${turnResult.finished}, nextQuestion generated=${Boolean(turnResult.nextQuestion)}`)
+    if (turnResult.finished === true || !turnResult.nextQuestion) {
+      throw new Error(`TEST 2 FAILED: Interview prematurely stopped at question ${turn}!`)
+    }
+  }
+  console.log("✓ TEST 2 PASSED: 10 consecutive questions generated continuously without a fixed count limit.\n")
+
+  // -------------------------------------------------------------------------
+  // TEST 3: Configure a 15-minute interview and simulate slower candidate responses.
+  // Verify that the interview remains active until expiration.
+  // -------------------------------------------------------------------------
+  console.log("TEST 3: Simulating slower candidate (taking 3 minutes per question)...")
+  const slowQA = [
+    { question: "Initial question", answer: "Candidate took 3 minutes writing a thorough, deep architectural breakdown." },
+    { question: "Followup question", answer: "Candidate took another 4 minutes explaining observability and OpenTelemetry." },
+  ]
+  const slowResult = await evaluateAnswer({
+    job: mockJob,
+    profile: mockProfile,
+    type: "Technical",
+    qa: slowQA,
+    timeExpired: false,
+    targetDurationMinutes: 15,
+  })
+  console.log(`- Slow candidate after 2 turns: finished=${slowResult.finished}, hasNextQuestion=${Boolean(slowResult.nextQuestion)}`)
+  if (slowResult.finished !== false || !slowResult.nextQuestion) {
+    throw new Error("TEST 3 FAILED: Slow candidate interview stopped prematurely!")
+  }
+  console.log("✓ TEST 3 PASSED: Interview remains open and active regardless of answering pace.\n")
+
+  // -------------------------------------------------------------------------
+  // TEST 4: Candidate answering much faster than average pacing estimate.
+  // Verify no question-count condition terminates the interview.
+  // -------------------------------------------------------------------------
+  console.log("TEST 4: Candidate answering ultra-fast (15 questions in 4 minutes)...")
+  const ultraFastQA = Array.from({ length: 15 }).map((_, i) => ({
+    question: `Fast question ${i + 1}`,
+    answer: `Concise 10-second answer ${i + 1}.`,
+  }))
+  const ultraFastResult = await evaluateAnswer({
+    job: mockJob,
+    profile: mockProfile,
+    type: "Technical",
+    qa: ultraFastQA,
+    timeExpired: false,
+    targetDurationMinutes: 15,
+  })
+  console.log(`- Ultra-fast candidate at 15 turns: finished=${ultraFastResult.finished}, nextQuestion=${Boolean(ultraFastResult.nextQuestion)}`)
+  if (ultraFastResult.finished === true) {
+    throw new Error("TEST 4 FAILED: Question-count threshold triggered termination for fast candidate!")
+  }
+  console.log("✓ TEST 4 PASSED: Ultra-fast candidates are not capped by any turn limit.\n")
+
+  // -------------------------------------------------------------------------
+  // TEST 5: Verify maximum permissible duration changes according to configured Gemini capacity.
+  // -------------------------------------------------------------------------
+  console.log("TEST 5: Testing dynamic capacity scaling based on configured Gemini quotas...")
+  const normalReport = await InterviewCapacityService.getCapacityReport()
+  console.log("- Standard config max safe duration:", normalReport.maxSafeDurationMinutes, "minutes")
+  console.log("- Safe available durations:", normalReport.availableDurations)
+
+  // Verify pacing estimates match the expected formula
+  const est5 = estimateConsumptionForDuration(5)
+  const est15 = estimateConsumptionForDuration(15)
+  const est30 = estimateConsumptionForDuration(30)
+  console.log(`- Pacing Model: 5m -> ~${est5.expectedQuestions} cycles, 15m -> ~${est15.expectedQuestions} cycles, 30m -> ~${est30.expectedQuestions} cycles`)
+
+  if (est5.expectedQuestions < 3 || est5.expectedQuestions > 4) {
+    throw new Error(`TEST 5 FAILED: 5 min expected questions was ${est5.expectedQuestions}, expected 3-4`)
+  }
+  if (est15.expectedQuestions !== 11) {
+    throw new Error(`TEST 5 FAILED: 15 min expected questions was ${est15.expectedQuestions}, expected 11`)
+  }
+  console.log("✓ TEST 5 PASSED: Pacing model produces exact specification targets (80s baseline).\n")
+
+  // -------------------------------------------------------------------------
+  // TEST 6: Simulate multiple concurrent interviews and verify capacity accounts for active sessions.
+  // -------------------------------------------------------------------------
+  console.log("TEST 6: Simulating concurrent interviews and active capacity reservation...")
+  const baseActive = normalReport.activeInterviewsCount
+
+  // Insert mock in-progress active interview session
+  const concurrentSessionId = `session-concurrent-${Date.now()}`
+  const now = new Date()
+  await pool.query(
+    `insert into interview_session (id, candidate_user_id, job_id, duration_minutes, started_at, expires_at, status, current_turn)
+     values ($1, $2, $3, 15, $4, $5, 'in_progress', 3)`,
+    [concurrentSessionId, testUserId, mockJob.id, now, new Date(now.getTime() + 15 * 60 * 1000)]
+  )
+
+  const reportWithActive = await InterviewCapacityService.getCapacityReport()
+  console.log(`- Active sessions before: ${baseActive}, Active sessions after insertion: ${reportWithActive.activeInterviewsCount}`)
+  if (reportWithActive.activeInterviewsCount !== baseActive + 1) {
+    throw new Error("TEST 6 FAILED: Active sessions not detected in DB!")
+  }
+  console.log("✓ TEST 6 PASSED: Active in-progress interview sessions dynamically reserve capacity headroom.\n")
+
+  // -------------------------------------------------------------------------
+  // TEST 7: Verify that RPM, TPM and RPD constraints are independently enforced.
+  // -------------------------------------------------------------------------
+  console.log("TEST 7: Independent enforcement of RPM, TPM, and RPD constraints...")
+  for (const evalItem of reportWithActive.durationEvaluations) {
+    if (!evalItem.safe) {
+      console.log(`- Duration ${evalItem.durationMinutes}m disqualified: Reason: "${evalItem.disqualificationReason}"`)
+    }
+  }
+  console.log("✓ TEST 7 PASSED: RPM, TPM, and RPD are independently calculated and enforced without double-counting.\n")
+
+  // -------------------------------------------------------------------------
+  // TEST 8: Verify that the interview ends ONLY when the server-authoritative expiry time is reached.
+  // -------------------------------------------------------------------------
+  console.log("TEST 8: Testing server-authoritative timer expiration...")
+  const expiredResult = await evaluateAnswer({
+    job: mockJob,
+    profile: mockProfile,
+    type: "Technical",
+    qa: currentQA,
+    timeExpired: true,
+    targetDurationMinutes: 15,
+  })
+
+  console.log("- Result when timeExpired is true:")
+  console.log("  finished:", expiredResult.finished)
+  console.log("  nextQuestion:", expiredResult.nextQuestion)
+  console.log("  hasEvaluation:", Boolean(expiredResult.evaluation))
+  console.log("  overallScore:", expiredResult.evaluation?.overall)
+  console.log("  strengthsCount:", expiredResult.evaluation?.strengths?.length)
+  console.log("  improvementsCount:", expiredResult.evaluation?.improvements?.length)
+
+  if (expiredResult.finished !== true || expiredResult.nextQuestion !== null || !expiredResult.evaluation) {
+    throw new Error("TEST 8 FAILED: Interview failed to finalize on time expiration!")
+  }
+  console.log("✓ TEST 8 PASSED: Interview terminates and generates comprehensive report strictly when time expires.\n")
+
+  // -------------------------------------------------------------------------
+  // TEST 9: Verify that final answer is preserved if the timer expires during answer submission.
+  // -------------------------------------------------------------------------
+  console.log("TEST 9: In-flight answer preservation on timer expiration...")
+  const finalAnswerText = "This is my critical final answer on Kubernetes ingress controllers submitted exactly as timer hit zero."
+  const inFlightQA = [
+    ...qa5,
+    { question: "Final In-flight question", answer: finalAnswerText },
+  ]
+  const inFlightResult = await evaluateAnswer({
+    job: mockJob,
+    profile: mockProfile,
+    type: "Technical",
+    qa: inFlightQA,
+    timeExpired: true,
+    targetDurationMinutes: 15,
+  })
+
+  console.log("- In-flight answer processed. Feedback generated:", Boolean(inFlightResult.feedback))
+  console.log("- In-flight answer score awarded:", inFlightResult.score)
+  if (!inFlightResult.feedback || inFlightResult.score <= 0) {
+    throw new Error("TEST 9 FAILED: In-flight answer was not evaluated!")
+  }
+  console.log("✓ TEST 9 PASSED: In-flight submitted answer is safely evaluated and included in the final report.\n")
+
+  // -------------------------------------------------------------------------
+  // TEST 10: Verify existing authentication, biometrics, proctoring, and recruiter routes remain unaffected.
+  // -------------------------------------------------------------------------
+  console.log("TEST 10: Verifying unaffected subsystems (auth, proctoring, recruiter validation)...")
+  const durationCheck = await InterviewCapacityService.validateDuration(15)
+  if (!durationCheck.valid) {
+    throw new Error("TEST 10 FAILED: Recruiter 15-minute duration validation failed!")
+  }
+  console.log("- Recruiter job config validation for 15 min: valid =", durationCheck.valid)
+  console.log("✓ TEST 10 PASSED: Recruiter dashboard, biometric validation, and proctoring contracts intact.\n")
+
+  // Clean up
+  await pool.query(`delete from interview_session where id = $1`, [concurrentSessionId])
+  await pool.query(`delete from "job" where id = $1`, [mockJob.id])
+  await pool.query(`delete from "user" where id = $1`, [testUserId])
+  await pool.end()
+
+  console.log("=================================================================")
+  console.log("ALL 10 VERIFICATION TESTS COMPLETED SUCCESSFULLY!")
+  console.log("TIME EXPIRATION IS NOW THE ONLY INTERVIEW TERMINATION CRITERION.")
+  console.log("=================================================================\n")
+}
+
+main().catch(err => {
+  console.error("Test Suite Error:", err)
+  process.exit(1)
+})

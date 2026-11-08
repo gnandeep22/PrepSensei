@@ -24,9 +24,10 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import type { GeneratedJobDraft } from "@/lib/jobs/agentic-jd"
+import type { GeneratedJobDraft, EvaluationCriterion } from "@/lib/jobs/agentic-jd"
 import { InterviewConfigSection } from "./interview-config-section"
 import { ModelAvailabilityBox } from "./model-availability-box"
+import { EvaluationCriteriaManager } from "./evaluation-criteria-manager"
 
 const PROMPT_PRESETS = [
   "Senior Full Stack Engineer (React, Node.js, Postgres) at TechCorp in Bangalore, 4+ yrs experience, ₹18-25 LPA. Building real-time SaaS APIs and high-scale frontends.",
@@ -40,6 +41,7 @@ export function AgenticJobCreator({ onJobPublished }: { onJobPublished?: (result
   const [loading, setLoading] = useState(false)
   const [publishing, setPublishing] = useState(false)
   const [draft, setDraft] = useState<GeneratedJobDraft | null>(null)
+  const [originalCriteria, setOriginalCriteria] = useState<EvaluationCriterion[]>([])
   const [publishedJobId, setPublishedJobId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [raceStats, setRaceStats] = useState<{
@@ -78,10 +80,13 @@ export function AgenticJobCreator({ onJobPublished }: { onJobPublished?: (result
           raceDurationMs: data.raceDurationMs,
         })
       }
+      const incomingCriteria = Array.isArray(data.draft.evaluationCriteria) ? data.draft.evaluationCriteria : []
       setDraft({
         ...data.draft,
+        evaluationCriteria: incomingCriteria,
         interviewDurationMinutes: data.draft.interviewDurationMinutes || 15,
       })
+      setOriginalCriteria(incomingCriteria)
     } catch (err: any) {
       setError(err.message || "Something went wrong generating the job.")
     } finally {
@@ -342,32 +347,15 @@ export function AgenticJobCreator({ onJobPublished }: { onJobPublished?: (result
               disabled={publishing}
             />
 
-            {/* Generated Screening Questions */}
-            {draft.interviewQuestions && draft.interviewQuestions.length > 0 && (
-              <div className="flex flex-col gap-2 rounded-lg border border-border/80 bg-muted/20 p-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold flex items-center gap-1.5">
-                    <HelpCircle className="size-3.5 text-primary" />
-                    AI Screening Interview Criteria ({draft.interviewQuestions.length} Questions)
-                  </span>
-                  <Badge variant="outline" className="text-[10px]">Auto-Evaluated</Badge>
-                </div>
-                <div className="flex flex-col gap-2 divide-y divide-border/60">
-                  {draft.interviewQuestions.map((q, i) => (
-                    <div key={i} className="pt-2 first:pt-0 flex flex-col gap-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[11px] font-mono font-bold text-muted-foreground">Q{i + 1}.</span>
-                        <span className="text-xs font-medium text-foreground">{q.question}</span>
-                      </div>
-                      <div className="flex items-center gap-2 pl-5 text-[11px] text-muted-foreground">
-                        <Badge variant="outline" className="text-[10px] h-4 px-1">{q.skill}</Badge>
-                        <span>Key expectations: {q.keyPoints.join(", ")}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+            {/* AI Interview Evaluation Criteria Manager (Replaces old Question list UI) */}
+            {draft.evaluationCriteria && draft.evaluationCriteria.length > 0 ? (
+              <EvaluationCriteriaManager
+                criteria={draft.evaluationCriteria}
+                onChange={(updated) => setDraft({ ...draft, evaluationCriteria: updated })}
+                originalCriteria={originalCriteria}
+                disabled={publishing}
+              />
+            ) : null}
 
             {/* Ask Permission to Publish Banner */}
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3 rounded-lg border border-primary/40 bg-primary/10 p-3.5">
@@ -381,7 +369,10 @@ export function AgenticJobCreator({ onJobPublished }: { onJobPublished?: (result
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setDraft(null)}
+                  onClick={() => {
+                    setDraft(null)
+                    setOriginalCriteria([])
+                  }}
                   disabled={publishing}
                   className="h-8 text-xs"
                 >

@@ -23,12 +23,52 @@ export async function POST(req: NextRequest) {
       salary,
       requiredSkills = [],
       description,
+      evaluationCriteria = [],
       interviewQuestions = [],
       interviewDurationMinutes = 15,
     } = body
 
     if (!title || !description) {
       return NextResponse.json({ error: "Title and description are required" }, { status: 400 })
+    }
+
+    // Sanitize and validate evaluation criteria
+    let sanitizedCriteria = Array.isArray(evaluationCriteria)
+      ? evaluationCriteria
+          .filter((c: any) => c && typeof c === "object" && Boolean(c.title?.trim()))
+          .map((c: any, idx: number) => ({
+            id: c.id ? String(c.id).trim() : `criterion_${idx + 1}`,
+            title: String(c.title).trim(),
+            description: c.description ? String(c.description).trim() : "Evaluate candidate capability in this area.",
+            keyAspects: Array.isArray(c.keyAspects) && c.keyAspects.length > 0
+              ? c.keyAspects.map((k: any) => String(k).trim()).filter(Boolean)
+              : [String(c.title).trim()],
+            importance: (c.importance === "high" || c.importance === "medium" || c.importance === "low")
+              ? c.importance
+              : "medium",
+          }))
+      : []
+
+    // If no criteria provided (legacy or older payload), generate from requiredSkills or interviewQuestions
+    if (sanitizedCriteria.length === 0) {
+      if (Array.isArray(interviewQuestions) && interviewQuestions.length > 0) {
+        sanitizedCriteria = interviewQuestions.map((q: any, idx: number) => ({
+          id: `criterion_${idx + 1}`,
+          title: q.skill || `Dimension ${idx + 1}`,
+          description: q.question || "Evaluate candidate competency in this technical area.",
+          keyAspects: Array.isArray(q.keyPoints) && q.keyPoints.length > 0 ? q.keyPoints : [q.skill || "Technical"],
+          importance: idx === 0 ? "high" : "medium",
+        }))
+      } else {
+        const skillsList = Array.isArray(requiredSkills) && requiredSkills.length > 0 ? requiredSkills : ["Core Engineering"]
+        sanitizedCriteria = skillsList.slice(0, 5).map((skill: string, idx: number) => ({
+          id: `criterion_${idx + 1}`,
+          title: `${skill} & Architecture`,
+          description: `Assess candidate's depth and practical experience with ${skill}.`,
+          keyAspects: [skill, "Best practices", "Problem solving"],
+          importance: idx === 0 ? "high" : "medium",
+        }))
+      }
     }
 
     const durationNum = Number(interviewDurationMinutes) || 15
@@ -75,21 +115,34 @@ export async function POST(req: NextRequest) {
       description: description.trim(),
       posted: "Just now",
       interviewDurationMinutes: durationNum,
+      evaluationCriteria: sanitizedCriteria,
       createdBy: user.id,
     })
 
-    // 2. Format assessment questions for the candidate interview
-    const formattedQuestions = (interviewQuestions || []).map((q: any, idx: number) => ({
-      id: `q-${idx + 1}`,
-      type: "short" as const,
-      skill: q.skill || "Technical",
-      difficulty: "Medium" as const,
-      question: q.question,
-      options: [],
-      correctIndex: 0,
-      explanation: "",
-      keyPoints: Array.isArray(q.keyPoints) ? q.keyPoints : [],
-    }))
+    // 2. Format assessment questions for backward compatibility if questions array is read
+    const formattedQuestions = (interviewQuestions && interviewQuestions.length > 0)
+      ? interviewQuestions.map((q: any, idx: number) => ({
+          id: `q-${idx + 1}`,
+          type: "short" as const,
+          skill: q.skill || "Technical",
+          difficulty: "Medium" as const,
+          question: q.question,
+          options: [],
+          correctIndex: 0,
+          explanation: "",
+          keyPoints: Array.isArray(q.keyPoints) ? q.keyPoints : [],
+        }))
+      : sanitizedCriteria.map((c: any, idx: number) => ({
+          id: `q-${idx + 1}`,
+          type: "short" as const,
+          skill: c.keyAspects[0] || c.title,
+          difficulty: "Medium" as const,
+          question: `Can you discuss your practical experience with ${c.title}?`,
+          options: [],
+          correctIndex: 0,
+          explanation: "",
+          keyPoints: c.keyAspects,
+        }))
 
     // 3. Create published assessment linked to this job
     await db.insert(assessment).values({
@@ -102,12 +155,14 @@ export async function POST(req: NextRequest) {
       difficulty: "Medium",
       status: "published",
       questions: formattedQuestions,
+      evaluationCriteria: sanitizedCriteria,
     })
 
     return NextResponse.json({
       success: true,
       jobId,
       assessmentId,
+      evaluationCriteria: sanitizedCriteria,
       message: "Job and AI Interview successfully published to Candidate Portal!",
     })
   } catch (error: any) {

@@ -4,12 +4,12 @@ import Link from "next/link"
 import { Suspense, useCallback, useEffect, useRef, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import { motion } from "motion/react"
-import { AlertTriangle, ArrowLeft, ArrowRight, Bot, Camera, CameraOff, CheckCircle2, Eye, EyeOff, Loader2, Mic, MicOff, PhoneOff, RotateCcw, ScanFace, Send, ShieldCheck, Sparkles, Trash2, UserRound, Users } from "lucide-react"
+import { AlertTriangle, ArrowLeft, ArrowRight, Bot, Camera, CameraOff, CheckCircle2, Clock, Eye, EyeOff, Loader2, Mic, MicOff, PhoneOff, RotateCcw, ScanFace, Send, ShieldCheck, Sparkles, Trash2, UserRound, Users } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useApp } from "@/lib/store"
 import { useSession } from "@/lib/auth-client"
 import { answerFeedback, demoEvaluation, demoJobs, interviewQuestions, type Assessment, type InterviewType } from "@/lib/demo-data"
-import { TOTAL_QUESTIONS, type AnswerResponse, type QAPair, type StartResponse } from "@/lib/interview/protocol"
+import { type AnswerResponse, type QAPair, type StartResponse } from "@/lib/interview/protocol"
 import { useSpeechRecognition, useSpeechSynthesis } from "@/lib/interview/use-speech"
 import { AiInterviewer, type AiState } from "@/components/interview/ai-interviewer"
 import { CandidateVideo } from "@/components/interview/candidate-video"
@@ -28,7 +28,6 @@ import { ModelAvailabilityBox } from "@/components/recruiter/model-availability-
 type Message = { role: "interviewer" | "candidate" | "feedback"; text: string }
 
 const types: InterviewType[] = ["Technical", "Behavioral", "HR"]
-const total = TOTAL_QUESTIONS
 
 function InterviewContent() {
   const { data: session } = useSession()
@@ -305,6 +304,7 @@ function InterviewContent() {
           type,
           profile,
           screeningQuestions: recruiterAssessment?.questions || [],
+          evaluationCriteria: recruiterAssessment?.evaluationCriteria || job.evaluationCriteria || [],
           durationMinutes: job.interviewDurationMinutes || durationMinutes,
         }),
       })
@@ -366,6 +366,7 @@ function InterviewContent() {
           profile,
           qa: nextHistory,
           screeningQuestions: recruiterAssessment?.questions || [],
+          evaluationCriteria: recruiterAssessment?.evaluationCriteria || job.evaluationCriteria || [],
           interviewSessionId: interviewSessionId || undefined,
           timeExpired: Boolean(isForcedExpiry || isTimeExpiredRef.current),
         }),
@@ -502,7 +503,7 @@ function InterviewContent() {
             </CardHeader>
             <CardContent className="flex flex-col items-center gap-3">
               <MatchScore score={evaluation.overall} size="lg" label="overall" />
-              <Badge variant="secondary">{total} questions answered</Badge>
+              <Badge variant="secondary">{history.length} responses evaluated</Badge>
             </CardContent>
           </Card>
           <Card className="lg:col-span-2">
@@ -561,7 +562,7 @@ function InterviewContent() {
             <CardContent className="flex flex-col gap-3">
               {feedbacks.map((fb, i) => (
                 <div key={i} className="rounded-lg border border-border p-3 text-sm">
-                  <span className="font-semibold text-primary">Question {i + 1} Note: </span>
+                  <span className="font-semibold text-primary">Response #{i + 1} Note: </span>
                   <span className="text-muted-foreground">{fb}</span>
                 </div>
               ))}
@@ -597,7 +598,7 @@ function InterviewContent() {
                 Private practice
               </Badge>
             </div>
-            <CardDescription>{total} questions tailored to your chosen job role and interview type.</CardDescription>
+            <CardDescription>Continuous practice interview tailored to your chosen job role until the duration expires.</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
             <ModelAvailabilityBox
@@ -683,32 +684,21 @@ function InterviewContent() {
                   </CardTitle>
                 </div>
 
-                {/* Progress bar, timer and counter */}
+                {/* Countdown Timer & Session Status */}
                 <div className="flex flex-col items-start sm:items-end gap-1.5">
-                  <div className="flex items-center gap-2.5">
+                  <div className="flex items-center gap-2">
                     <InterviewTimer
                       initialSeconds={remainingSeconds}
                       expiresAt={expiresAt}
                       onExpire={handleTimerExpire}
                     />
-                    <span className="text-xs font-semibold text-foreground">
-                      Question {Math.min(index + 1, total)} <span className="text-muted-foreground font-normal">of {total}</span>
-                    </span>
+                    <Badge variant="outline" className="border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-medium px-2 py-0.5">
+                      Interview in progress
+                    </Badge>
                   </div>
-                  <div className="flex items-center gap-1.5" aria-hidden="true">
-                    {Array.from({ length: total }).map((_, i) => (
-                      <div
-                        key={i}
-                        className={cn(
-                          "h-2 rounded-full transition-all duration-500",
-                          i < index
-                            ? "w-6 bg-primary"
-                            : i === index
-                            ? "w-8 bg-primary ring-2 ring-primary/30 shadow-xs"
-                            : "w-5 bg-muted",
-                        )}
-                      />
-                    ))}
+                  <div className="text-[11px] text-muted-foreground flex items-center gap-1">
+                    <Clock className="size-3 text-muted-foreground" />
+                    <span>Time-driven interview · Ends on timer expiration</span>
                   </div>
                 </div>
               </div>
@@ -1018,14 +1008,16 @@ function InterviewContent() {
 
 /** Graceful fallback used when the AI interviewer cannot be reached. */
 function demoFallback(type: InterviewType, answered: number): AnswerResponse {
-  const finished = answered >= total
+  const finished = false
   const feedback = answerFeedback[(answered - 1 + answerFeedback.length) % answerFeedback.length]
+  const qList = interviewQuestions[type] || []
+  const nextQ = qList[answered % qList.length] || `Could you discuss your approach to challenging ${type.toLowerCase()} scenarios?`
   return {
     feedback,
     score: 75,
-    nextQuestion: finished ? null : interviewQuestions[type][answered] ?? null,
-    finished,
-    evaluation: finished ? demoEvaluation : null,
+    nextQuestion: nextQ,
+    finished: false,
+    evaluation: null,
   }
 }
 

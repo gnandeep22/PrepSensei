@@ -77,6 +77,14 @@ export type TruthClaimStatus = "supported" | "needs_review" | "unsupported"
 export type TruthClaim = { claim: string; status: TruthClaimStatus; explanation: string }
 export type TruthCheck = { overall: TruthClaimStatus; claims: TruthClaim[] }
 
+export interface EvaluationCriterion {
+  id: string
+  title: string
+  description: string
+  keyAspects: string[]
+  importance: "high" | "medium" | "low"
+}
+
 export type Job = {
   id: string
   title: string
@@ -91,6 +99,7 @@ export type Job = {
   url?: string
   source?: "recruiter" | "jobful" | "indianapi" | "jsearch" | "demo" | string
   interviewDurationMinutes?: number
+  evaluationCriteria?: EvaluationCriterion[]
 }
 
 /** Check if a job was posted directly by a recruiter in PrepSensei. */
@@ -363,9 +372,17 @@ export const answerFeedback = [
   "Well communicated. A brief summary sentence at the end would help the interviewer follow.",
 ]
 
+export type CriterionEvaluation = {
+  criterionId: string
+  title: string
+  score: number
+  assessment: string
+}
+
 export type Evaluation = {
   overall: number
   breakdown: { label: string; score: number }[]
+  criteriaEvaluation?: CriterionEvaluation[]
   strengths: string[]
   improvements: string[]
   summary?: string
@@ -479,6 +496,7 @@ export type Assessment = {
   difficulty: Difficulty
   status: "draft" | "published"
   questions: AssessmentQuestion[]
+  evaluationCriteria?: EvaluationCriterion[]
   createdAt: string
 }
 

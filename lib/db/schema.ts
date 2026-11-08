@@ -5,6 +5,7 @@ import type {
   Difficulty,
   Education,
   Evaluation,
+  EvaluationCriterion,
   Experience,
   IntegrityResult,
   Job,
@@ -115,6 +116,8 @@ export const job = pgTable("job", {
   url: text("url"),
   /** Configured interview duration in minutes (5-min increments, default 15). */
   interviewDurationMinutes: integer("interview_duration_minutes").notNull().default(15),
+  /** Recruiter-configured evaluation criteria (5-8 dimensions) guiding continuous AI interviewing. */
+  evaluationCriteria: jsonb("evaluation_criteria").$type<EvaluationCriterion[]>().notNull().default([]),
   createdBy: text("created_by").references(() => user.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
@@ -187,6 +190,8 @@ export const assessment = pgTable(
     difficulty: text("difficulty").$type<Difficulty>().notNull().default("Medium"),
     status: text("status").$type<"draft" | "published">().notNull().default("draft"),
     questions: jsonb("questions").$type<AssessmentQuestion[]>().notNull().default([]),
+    /** Recruiter-configured evaluation criteria (5-8 dimensions) guiding continuous AI interviewing. */
+    evaluationCriteria: jsonb("evaluation_criteria").$type<EvaluationCriterion[]>().notNull().default([]),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
   },

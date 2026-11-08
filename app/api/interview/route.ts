@@ -5,8 +5,8 @@ import type { InterviewRequest } from "@/lib/interview/protocol"
 import { getSessionUser } from "@/lib/session"
 import { InterviewCapacityService } from "@/lib/interview/capacity-service"
 import { db } from "@/lib/db"
-import { interviewSession } from "@/lib/db/schema"
-import { eq, and } from "drizzle-orm"
+import { interviewSession, job as jobTable } from "@/lib/db/schema"
+import { eq, and, desc } from "drizzle-orm"
 
 export const runtime = "nodejs"
 export const maxDuration = 30
@@ -23,8 +23,29 @@ export async function POST(req: Request) {
   const candidateUserId = user?.id || "demo-candidate"
 
   // Prefer full Job sent by client; fall back to demo jobs
-  const job = body.job ?? demoJobs.find((j) => j.id === body.jobId) ?? demoJobs[0]
+  let job = body.job ?? demoJobs.find((j) => j.id === body.jobId) ?? demoJobs[0]
   const profile = body.profile ?? demoCandidate
+  let evaluationCriteria = (body as any).evaluationCriteria || job.evaluationCriteria || []
+
+  // If criteria not in payload, query Postgres for authoritative saved criteria on the job
+  if ((!evaluationCriteria || evaluationCriteria.length === 0) && (body.jobId || job?.id)) {
+    try {
+      const targetId = body.jobId || job?.id
+      const [dbJob] = await db.select().from(jobTable).where(eq(jobTable.id, targetId)).limit(1)
+      if (dbJob) {
+        job = {
+          ...job,
+          ...dbJob,
+          url: dbJob.url || undefined,
+        }
+        if (dbJob.evaluationCriteria && Array.isArray(dbJob.evaluationCriteria) && dbJob.evaluationCriteria.length > 0) {
+          evaluationCriteria = dbJob.evaluationCriteria
+        }
+      }
+    } catch (e) {
+      // Non-fatal DB lookup warning
+    }
+  }
 
   try {
     if (body.action === "start") {
@@ -50,12 +71,13 @@ export async function POST(req: Request) {
         )
       }
 
-      // 2. Generate opening question
+      // 2. Generate opening question guided by evaluation criteria
       const result = await generateFirstQuestion({
         job,
         profile,
         type: body.type,
         screeningQuestions: body.screeningQuestions,
+        evaluationCriteria,
         interviewSessionId,
         candidateUserId,
       })
@@ -98,8 +120,9 @@ export async function POST(req: Request) {
           const expiresAtMs = existing.expiresAt.getTime()
           const remainingMs = expiresAtMs - now
 
-          // 30-second network latency and in-flight answer transmission grace period
-          if (remainingMs <= -30000) {
+          // Server-authoritative time evaluation:
+          // The interview expires strictly when the timer reaches zero (or client flagged timer zero).
+          if (body.timeExpired || remainingMs <= 0) {
             timeExpired = true
           }
           remainingSeconds = Math.max(0, Math.floor(remainingMs / 1000))
@@ -114,13 +137,14 @@ export async function POST(req: Request) {
         console.warn("[interview route] Session lookup warning:", e)
       }
 
-      // 2. Evaluate answer with server-authoritative time awareness
+      // 2. Evaluate answer with server-authoritative time awareness and evaluation criteria
       const result = await evaluateAnswer({
         job,
         profile,
         type: body.type,
         qa: body.qa,
         screeningQuestions: body.screeningQuestions,
+        evaluationCriteria,
         interviewSessionId: body.interviewSessionId || activeSession?.id,
         candidateUserId,
         timeExpired,
