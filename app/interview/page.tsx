@@ -23,6 +23,7 @@ import { useInterviewAnalysis } from "@/lib/face/use-interview-analysis"
 import { FaceAnalysisReport } from "@/components/face/face-analysis-report"
 import type { InterviewFaceReport } from "@/lib/db/schema"
 import { InterviewTimer } from "@/components/interview/interview-timer"
+import { ModelAvailabilityBox } from "@/components/recruiter/model-availability-box"
 
 type Message = { role: "interviewer" | "candidate" | "feedback"; text: string }
 
@@ -599,6 +600,11 @@ function InterviewContent() {
             <CardDescription>{total} questions tailored to your chosen job role and interview type.</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
+            <ModelAvailabilityBox
+              title="AI Interviewer Race Engine"
+              fallbackMessage="All Gemini models are cooling down. Safe local practice questions will be used until cooldown completes."
+            />
+
             <div className="rounded-2xl border border-primary/25 bg-primary/[0.06] p-4 flex items-start gap-3">
               <ShieldCheck className="size-5 text-primary mt-0.5 shrink-0" />
               <div className="text-xs">

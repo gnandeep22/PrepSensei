@@ -31,6 +31,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import type { SkillGapAnalysisResult } from "@/app/api/skill-gap/route"
+import { ModelAvailabilityBox } from "@/components/recruiter/model-availability-box"
 
 export default function SkillGapPage() {
   const { profile, selectedJobId, selectedJob, selectJob, evaluation, allJobs, resumeUploaded, resumeFileName } = useApp()
@@ -42,6 +43,11 @@ export default function SkillGapPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [modelSource, setModelSource] = useState<string | null>(null)
+  const [raceStats, setRaceStats] = useState<{
+    winningModel?: string
+    winningModelLabel?: string
+    raceDurationMs?: number
+  } | null>(null)
 
   const fetchRagSkillGap = useCallback(
     async (forceRefresh = false) => {
@@ -79,6 +85,13 @@ export default function SkillGapPage() {
         }
 
         const data = await res.json()
+        if (data.winningModel) {
+          setRaceStats({
+            winningModel: data.winningModel,
+            winningModelLabel: data.winningModelLabel,
+            raceDurationMs: data.raceDurationMs,
+          })
+        }
         if (data.analysis) {
           setRagAnalysis(data.analysis)
           setModelSource(data.source)
@@ -141,6 +154,13 @@ export default function SkillGapPage() {
             </div>
           </div>
         }
+      />
+
+      <ModelAvailabilityBox
+        winningModel={raceStats?.winningModel}
+        winningModelLabel={raceStats?.winningModelLabel}
+        raceDurationMs={raceStats?.raceDurationMs}
+        title="Skill Gap AI Race Engine"
       />
 
       {/* RAG Engine Status / Grounding Evidence Header */}

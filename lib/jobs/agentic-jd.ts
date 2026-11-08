@@ -2,6 +2,7 @@ import "server-only"
 import { generateObject } from "ai"
 import { z } from "zod"
 import { getChatModel } from "@/lib/ai/model"
+import { raceGeminiGeneric } from "@/lib/ai/gemini-race"
 
 export type GeneratedJobDraft = {
   title: string
@@ -57,32 +58,47 @@ CRITICAL INSTRUCTIONS:
 4. Generate 4-5 tailored screening interview questions (both technical deep-dives and situational/behavioral) that an AI interviewer can ask candidates applying for this specific position.
 `
 
-export async function generateJobFromPrompt(prompt: string, recruiterCompany?: string): Promise<GeneratedJobDraft> {
-  const userPrompt = `Recruiter Prompt:\n"""${prompt}"""\n${recruiterCompany ? `Default Recruiter Company (use if not specified in prompt): ${recruiterCompany}` : ""}\n\nPlease generate the complete structured Job Description and tailored interview screening questions.`
+export async function generateJobFromPrompt(
+  prompt: string,
+  recruiterCompany?: string
+): Promise<{
+  draft: GeneratedJobDraft
+  winningModel?: string
+  winningModelLabel?: string
+  raceDurationMs?: number
+}> {
+  const userPrompt = `Recruiter Prompt:\n"""${prompt}"""\n${recruiterCompany ? `Default Recruiter Company (use if not specified in prompt): ${recruiterCompany}` : ""}\n\nPlease generate the complete structured Job Description and tailored interview screening questions adhering to schema: { title, company, location, type, experience, salary, requiredSkills, description, interviewQuestions: [{ question, type, skill, keyPoints }] }.`
 
   try {
-    const { object } = await generateObject({
-      model: getChatModel("gemini-3.8-flash"),
-      system: SYSTEM_PROMPT,
-      schema: jobDraftSchema,
-      prompt: userPrompt,
-      maxRetries: 1,
+    // 1. Parallel Multi-Model Gemini Race: fastest valid model wins!
+    const raceResult = await raceGeminiGeneric<GeneratedJobDraft>({
+      systemPrompt: SYSTEM_PROMPT,
+      userPrompt,
+      validate: (parsed) => Boolean(parsed && parsed.title && parsed.description && Array.isArray(parsed.requiredSkills)),
+      timeoutMs: 25000,
+      temperature: 0.2,
     })
-    return object as GeneratedJobDraft
-  } catch (err) {
-    console.warn("[agentic-jd] Primary model (gemini-3.8-flash) failed, trying fallback model (gemini-3.1-flash-lite):", err)
+
+    return {
+      draft: raceResult.data,
+      winningModel: raceResult.winningModel,
+      winningModelLabel: raceResult.winningModelLabel,
+      raceDurationMs: raceResult.raceDurationMs,
+    }
+  } catch (raceErr) {
+    console.warn("[agentic-jd] AI race failed or all models in cooldown, trying single model fallback:", raceErr)
     try {
       const { object } = await generateObject({
-        model: getChatModel("gemini-3.1-flash-lite"),
+        model: getChatModel("gemini-3.5-flash-lite"),
         system: SYSTEM_PROMPT,
         schema: jobDraftSchema,
         prompt: userPrompt,
         maxRetries: 1,
       })
-      return object as GeneratedJobDraft
+      return { draft: object as GeneratedJobDraft, winningModel: "gemini-3.5-flash-lite", winningModelLabel: "Gemini 3.5 Flash-Lite" }
     } catch (fallbackErr) {
       console.error("[agentic-jd] AI generation failed, using intelligent regex fallback parser:", fallbackErr)
-      return generateFallbackJob(prompt, recruiterCompany)
+      return { draft: generateFallbackJob(prompt, recruiterCompany) }
     }
   }
 }

@@ -3,6 +3,7 @@ import { generateObject } from "ai"
 import { z } from "zod"
 import { getChatModel } from "@/lib/ai/model"
 import { InterviewCapacityService } from "./capacity-service"
+import { raceGeminiGeneric, markModelRateLimited } from "@/lib/ai/gemini-race"
 
 export interface ExecuteInterviewParams<T extends z.ZodTypeAny> {
   system: string
@@ -47,8 +48,60 @@ function delay(ms: number): Promise<void> {
  */
 export async function executeResilientInterviewCall<T extends z.ZodTypeAny>(
   params: ExecuteInterviewParams<T>
-): Promise<{ object: z.infer<T>; modelUsed: string }> {
+): Promise<{
+  object: z.infer<T>
+  modelUsed: string
+  winningModelLabel?: string
+  raceDurationMs?: number
+}> {
   const { system, schema, prompt, purpose, interviewSessionId, jobId, candidateUserId } = params
+
+  // 1. Parallel Multi-Model Gemini Race:
+  // Dispatches concurrent requests across all eligible Gemini models.
+  // The fastest model wins; all remaining requests are aborted immediately.
+  try {
+    const raceResult = await raceGeminiGeneric<z.infer<T>>({
+      systemPrompt: system,
+      userPrompt: prompt,
+      validate: (parsed) => {
+        if (!parsed || typeof parsed !== "object") return false
+        const check = schema.safeParse(parsed)
+        return check.success
+      },
+      timeoutMs: 25000,
+    })
+
+    const durationMs = raceResult.raceDurationMs
+    const promptTokens = Math.max(100, Math.round((system.length + prompt.length) / 3.8))
+    const completionTokens = Math.max(50, Math.round(JSON.stringify(raceResult.data).length / 3.8))
+
+    // Asynchronously record successful usage
+    void InterviewCapacityService.recordUsage({
+      model: raceResult.winningModel,
+      requestCount: 1,
+      inputTokens: promptTokens,
+      outputTokens: completionTokens,
+      interviewSessionId,
+      jobId,
+      candidateUserId,
+      requestPurpose: purpose,
+      providerUsed: "google",
+      durationMs,
+      status: "success",
+    })
+
+    return {
+      object: raceResult.data,
+      modelUsed: raceResult.winningModel,
+      winningModelLabel: raceResult.winningModelLabel,
+      raceDurationMs: raceResult.raceDurationMs,
+    }
+  } catch (raceErr: any) {
+    console.warn(
+      "[gemini-executor] Parallel AI race bypassed or failed, engaging sequential fallback chain:",
+      raceErr?.message || raceErr
+    )
+  }
 
   let lastError: any = null
 
@@ -113,16 +166,8 @@ export async function executeResilientInterviewCall<T extends z.ZodTypeAny>(
             errorMessage: err.message,
           })
 
-          // Mark in-memory cooldown if global status map exists
-          if (typeof globalThis !== "undefined" && (globalThis as any)._prepSenseiModelStatuses) {
-            const map = (globalThis as any)._prepSenseiModelStatuses as Map<string, any>
-            map.set(modelId, {
-              status: "rate_limited",
-              retryAfter: Date.now() + 45000,
-              remainingSec: 45,
-              reason: err.message,
-            })
-          }
+          // Mark in-memory cooldown across all AI race components
+          markModelRateLimited(modelId, 45, err.message)
 
           // If rate limited, don't keep hammering the same model; break to try next fallback model
           if (attempt === 0) {

@@ -22,16 +22,28 @@ export async function POST(req: Request) {
       if (!body.job || !body.profile) {
         return NextResponse.json({ error: "Select a job before tailoring your CV." }, { status: 400 })
       }
-      const { tailored, fallback } = await tailorCv({ profile: body.profile, job: body.job })
-      return NextResponse.json({ cv: tailored, fallback })
+      const res = await tailorCv({ profile: body.profile, job: body.job })
+      return NextResponse.json({
+        cv: res.tailored,
+        fallback: res.fallback,
+        winningModel: res.winningModel,
+        winningModelLabel: res.winningModelLabel,
+        raceDurationMs: res.raceDurationMs,
+      })
     }
 
     if (body.action === "check") {
       if (!body.profile || !body.cv) {
         return NextResponse.json({ error: "Tailor a CV before running the check." }, { status: 400 })
       }
-      const { result, fallback } = await validateCv({ profile: body.profile, cv: body.cv })
-      return NextResponse.json({ check: result, fallback })
+      const res = await validateCv({ profile: body.profile, cv: body.cv })
+      return NextResponse.json({
+        check: res.result,
+        fallback: res.fallback,
+        winningModel: res.winningModel,
+        winningModelLabel: res.winningModelLabel,
+        raceDurationMs: res.raceDurationMs,
+      })
     }
 
     return NextResponse.json({ error: "Unknown action." }, { status: 400 })

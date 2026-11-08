@@ -18,11 +18,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Please provide a job prompt with at least a few keywords or requirements." }, { status: 400 })
     }
 
-    const draft = await generateJobFromPrompt(
+    const result = await generateJobFromPrompt(
       prompt.trim(),
       company || (user?.name && !user.name.includes("Hiring Partner") ? user.name : undefined)
     )
-    return NextResponse.json({ success: true, draft })
+    return NextResponse.json({
+      success: true,
+      draft: result.draft,
+      winningModel: result.winningModel,
+      winningModelLabel: result.winningModelLabel,
+      raceDurationMs: result.raceDurationMs,
+    })
   } catch (error: any) {
     console.error("[generate-job] Error:", error)
     return NextResponse.json({ error: error.message || "Failed to generate job draft" }, { status: 500 })

@@ -36,6 +36,7 @@ import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import type { GeneratedStudyPlan } from "@/app/api/study-plan/route"
 import { resolveReliableUrl, getResourcePlatform, type PlatformInfo } from "@/lib/study-plan/url-resolver"
+import { ModelAvailabilityBox } from "@/components/recruiter/model-availability-box"
 
 export default function StudyPlanPage() {
   const { studyProgress, toggleStudyWeek, evaluation, selectedJob, selectedJobId, selectJob, profile, allJobs } = useApp()
@@ -46,6 +47,11 @@ export default function StudyPlanPage() {
   const [aiPlan, setAiPlan] = useState<GeneratedStudyPlan | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [raceStats, setRaceStats] = useState<{
+    winningModel?: string
+    winningModelLabel?: string
+    raceDurationMs?: number
+  } | null>(null)
 
   // Derive initial gaps from evaluation or profile comparison memoized
   const analysis = useMemo(
@@ -113,6 +119,13 @@ export default function StudyPlanPage() {
         }
 
         const data = await res.json()
+        if (data.winningModel) {
+          setRaceStats({
+            winningModel: data.winningModel,
+            winningModelLabel: data.winningModelLabel,
+            raceDurationMs: data.raceDurationMs,
+          })
+        }
         if (data.plan) {
           setAiPlan((curr) => {
             if (curr && JSON.stringify(curr) === JSON.stringify(data.plan)) return curr
@@ -286,6 +299,13 @@ export default function StudyPlanPage() {
             </Button>
           </div>
         }
+      />
+
+      <ModelAvailabilityBox
+        winningModel={raceStats?.winningModel}
+        winningModelLabel={raceStats?.winningModelLabel}
+        raceDurationMs={raceStats?.raceDurationMs}
+        title="Study Plan AI Race Engine"
       />
 
       {/* Target Job & Strategy Overview Card */}

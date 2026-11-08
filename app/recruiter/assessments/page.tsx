@@ -21,6 +21,7 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { AgenticJobCreator } from "@/components/recruiter/agentic-job-creator"
+import { ModelAvailabilityBox } from "@/components/recruiter/model-availability-box"
 
 const builderSteps = [
   { label: "Job + Configuration", description: "Pick a job and what to evaluate" },
@@ -49,6 +50,11 @@ export default function AssessmentBuilderPage() {
   const [error, setError] = useState<string | null>(null)
   const [fallback, setFallback] = useState(false)
   const [published, setPublished] = useState<string | null>(null)
+  const [raceStats, setRaceStats] = useState<{
+    winningModel?: string
+    winningModelLabel?: string
+    raceDurationMs?: number
+  } | null>(null)
 
   const job = useMemo(() => availableJobs.find((j) => j.id === jobId) ?? availableJobs[0], [availableJobs, jobId])
 
@@ -96,6 +102,13 @@ export default function AssessmentBuilderPage() {
       const data = await res.json()
       setDraft(data.questions as AssessmentQuestion[])
       setFallback(Boolean(data.fallback))
+      if (data.winningModel) {
+        setRaceStats({
+          winningModel: data.winningModel,
+          winningModelLabel: data.winningModelLabel,
+          raceDurationMs: data.raceDurationMs,
+        })
+      }
     } catch {
       setError("The Assessment Agent is unavailable right now. Please try again in a moment.")
     } finally {
@@ -191,6 +204,14 @@ export default function AssessmentBuilderPage() {
         />
       ) : (
         <>
+          <ModelAvailabilityBox
+            winningModel={raceStats?.winningModel}
+            winningModelLabel={raceStats?.winningModelLabel}
+            raceDurationMs={raceStats?.raceDurationMs}
+            title="Assessment AI Race Engine"
+            className="mb-4"
+          />
+
           <Card>
             <CardContent>
               <Pipeline steps={builderSteps} activeIndex={activeStep} />

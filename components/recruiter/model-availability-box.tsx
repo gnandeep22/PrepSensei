@@ -12,6 +12,9 @@ interface ModelAvailabilityBoxProps {
   winningModel?: string | null
   winningModelLabel?: string | null
   raceDurationMs?: number | null
+  title?: string
+  endpoint?: string
+  fallbackMessage?: string
 }
 
 const STORAGE_KEY = "prepsensei_gemini_models_open"
@@ -22,6 +25,9 @@ export function ModelAvailabilityBox({
   winningModel,
   winningModelLabel,
   raceDurationMs,
+  title = "AI Race Model Availability",
+  endpoint = "/api/models",
+  fallbackMessage = "All AI models are currently rate-limited. The system will use deterministic fallback until cooldown expires.",
 }: ModelAvailabilityBoxProps) {
   const [isOpen, setIsOpen] = useState<boolean>(() => {
     if (typeof window !== "undefined") {
@@ -53,7 +59,10 @@ export function ModelAvailabilityBox({
   async function fetchStatuses() {
     try {
       setLoading(true)
-      const res = await fetch("/api/recruiter/models")
+      let res = await fetch(endpoint)
+      if (!res.ok && endpoint !== "/api/recruiter/models") {
+        res = await fetch("/api/recruiter/models")
+      }
       if (res.ok) {
         const data = await res.json()
         if (Array.isArray(data.statuses)) {
@@ -137,7 +146,7 @@ export function ModelAvailabilityBox({
           </div>
           <div className="flex items-center gap-1.5">
             <span className="font-bold text-[11px] tracking-wider uppercase text-foreground">
-              AI Race Model Availability
+              {title}
             </span>
             <ChevronDown
               className={cn("size-3.5 text-muted-foreground transition-transform duration-200", isOpen && "rotate-180")}
@@ -244,7 +253,7 @@ export function ModelAvailabilityBox({
             <div className="mt-1 rounded-lg border border-amber-500/30 bg-amber-500/10 p-2 text-xs text-amber-600 dark:text-amber-400 flex items-center gap-2">
               <AlertTriangle className="size-4 shrink-0" />
               <span>
-                All AI models are currently rate-limited. The system will use deterministic RAG shortlisting until cooldown expires.
+                {fallbackMessage}
               </span>
             </div>
           )}

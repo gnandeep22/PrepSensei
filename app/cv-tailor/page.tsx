@@ -10,6 +10,7 @@ import { Field, Notice, PageHeader, Pipeline, nativeSelectClass } from "@/compon
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { ModelAvailabilityBox } from "@/components/recruiter/model-availability-box"
 
 const tailorSteps = [
   { label: "Original Candidate Evidence", description: "Your parsed resume and profile" },
@@ -34,6 +35,11 @@ export default function CvTailorPage() {
   const [working, setWorking] = useState<"tailor" | "check" | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [fallback, setFallback] = useState(false)
+  const [raceStats, setRaceStats] = useState<{
+    winningModel?: string
+    winningModelLabel?: string
+    raceDurationMs?: number
+  } | null>(null)
 
   async function tailor() {
     if (!job) return
@@ -49,6 +55,13 @@ export default function CvTailorPage() {
       const data = await res.json()
       markTailored(job.id, data.cv)
       setFallback(Boolean(data.fallback))
+      if (data.winningModel) {
+        setRaceStats({
+          winningModel: data.winningModel,
+          winningModelLabel: data.winningModelLabel,
+          raceDurationMs: data.raceDurationMs,
+        })
+      }
     } catch {
       setError("CV tailoring is unavailable right now. Please try again in a moment.")
     } finally {
@@ -70,6 +83,13 @@ export default function CvTailorPage() {
       const data = await res.json()
       runTruthCheck(data.check)
       setFallback(Boolean(data.fallback))
+      if (data.winningModel) {
+        setRaceStats({
+          winningModel: data.winningModel,
+          winningModelLabel: data.winningModelLabel,
+          raceDurationMs: data.raceDurationMs,
+        })
+      }
     } catch {
       setError("The truthfulness check is unavailable right now. Please try again in a moment.")
     } finally {
@@ -94,6 +114,13 @@ export default function CvTailorPage() {
             />
           </Field>
         }
+      />
+
+      <ModelAvailabilityBox
+        winningModel={raceStats?.winningModel}
+        winningModelLabel={raceStats?.winningModelLabel}
+        raceDurationMs={raceStats?.raceDurationMs}
+        title="CV Tailor AI Race Engine"
       />
 
       <Card>

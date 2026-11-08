@@ -26,6 +26,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import type { GeneratedJobDraft } from "@/lib/jobs/agentic-jd"
 import { InterviewConfigSection } from "./interview-config-section"
+import { ModelAvailabilityBox } from "./model-availability-box"
 
 const PROMPT_PRESETS = [
   "Senior Full Stack Engineer (React, Node.js, Postgres) at TechCorp in Bangalore, 4+ yrs experience, ₹18-25 LPA. Building real-time SaaS APIs and high-scale frontends.",
@@ -41,6 +42,11 @@ export function AgenticJobCreator({ onJobPublished }: { onJobPublished?: (result
   const [draft, setDraft] = useState<GeneratedJobDraft | null>(null)
   const [publishedJobId, setPublishedJobId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [raceStats, setRaceStats] = useState<{
+    winningModel?: string
+    winningModelLabel?: string
+    raceDurationMs?: number
+  } | null>(null)
 
   const handleGenerate = async () => {
     if (!prompt.trim()) return
@@ -65,6 +71,13 @@ export function AgenticJobCreator({ onJobPublished }: { onJobPublished?: (result
       }
 
       const data = await res.json()
+      if (data.winningModel) {
+        setRaceStats({
+          winningModel: data.winningModel,
+          winningModelLabel: data.winningModelLabel,
+          raceDurationMs: data.raceDurationMs,
+        })
+      }
       setDraft({
         ...data.draft,
         interviewDurationMinutes: data.draft.interviewDurationMinutes || 15,
@@ -138,6 +151,13 @@ export function AgenticJobCreator({ onJobPublished }: { onJobPublished?: (result
       </CardHeader>
 
       <CardContent className="flex flex-col gap-5">
+        {/* Model Availability & Race Telemetry */}
+        <ModelAvailabilityBox
+          winningModel={raceStats?.winningModel}
+          winningModelLabel={raceStats?.winningModelLabel}
+          raceDurationMs={raceStats?.raceDurationMs}
+        />
+
         {/* Prompt Input */}
         <div className="flex flex-col gap-2">
           <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between">

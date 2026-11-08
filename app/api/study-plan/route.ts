@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { generateObject } from "ai"
 import { z } from "zod"
 import { getChatModel } from "@/lib/ai/model"
+import { raceGeminiGeneric } from "@/lib/ai/gemini-race"
 import { resolveReliableUrl } from "@/lib/study-plan/url-resolver"
 
 export const studyPlanSchema = z.object({
@@ -98,27 +99,37 @@ ${interviewScore ? `Recent Interview Overall Score: ${interviewScore}/100` : ""}
 Please generate an in-depth, structured 4-week study plan with authentic, working web resources across the internet (official documentation, engineering blogs, interactive coding practice, and video courses) to prepare this candidate to succeed in their interview for ${jobTitle} at ${company}.`
 
     try {
-      const { object } = await generateObject({
-        model: getChatModel("gemini-3.8-flash"),
-        system: STUDY_PLAN_SYSTEM_PROMPT,
-        schema: studyPlanSchema,
-        prompt,
-        maxRetries: 1,
+      const raceResult = await raceGeminiGeneric<GeneratedStudyPlan>({
+        systemPrompt: STUDY_PLAN_SYSTEM_PROMPT,
+        userPrompt: prompt,
+        validate: (parsed) => Boolean(parsed && Array.isArray(parsed.weeks) && parsed.weeks.length > 0),
+        timeoutMs: 30000,
       })
-      const sanitized = sanitizePlanUrls(object)
-      return NextResponse.json({ success: true, plan: sanitized })
-    } catch (primaryErr) {
-      console.warn("[study-plan] Primary model (gemini-3.8-flash) failed, trying fallback (gemini-3.1-flash-lite):", primaryErr)
+      const sanitized = sanitizePlanUrls(raceResult.data)
+      return NextResponse.json({
+        success: true,
+        plan: sanitized,
+        winningModel: raceResult.winningModel,
+        winningModelLabel: raceResult.winningModelLabel,
+        raceDurationMs: raceResult.raceDurationMs,
+      })
+    } catch (raceErr) {
+      console.warn("[study-plan] AI race failed or in cooldown, trying single model fallback:", raceErr)
       try {
         const { object } = await generateObject({
-          model: getChatModel("gemini-3.1-flash-lite"),
+          model: getChatModel("gemini-3.5-flash-lite"),
           system: STUDY_PLAN_SYSTEM_PROMPT,
           schema: studyPlanSchema,
           prompt,
           maxRetries: 1,
         })
         const sanitized = sanitizePlanUrls(object)
-        return NextResponse.json({ success: true, plan: sanitized })
+        return NextResponse.json({
+          success: true,
+          plan: sanitized,
+          winningModel: "gemini-3.5-flash-lite",
+          winningModelLabel: "Gemini 3.5 Flash-Lite",
+        })
       } catch (fallbackErr) {
         console.error("[study-plan] AI generation failed, using structured fallback plan:", fallbackErr)
         const fallbackPlan = sanitizePlanUrls(createDynamicFallbackPlan(jobTitle, company, requiredSkills, gaps))

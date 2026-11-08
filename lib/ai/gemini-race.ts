@@ -340,6 +340,26 @@ export function updateModelStatus(modelId: string, classification: ReturnType<ty
 }
 
 /**
+ * Mark a model as rate limited with explicit cooldown duration.
+ */
+export function markModelRateLimited(modelId: string, cooldownSec = 45, reason = "Rate limit (429)") {
+  const current = getModelStatus(modelId)
+  const retryAfter = Date.now() + cooldownSec * 1000
+  const updated: Partial<ModelStatusRecord> = {
+    ...current,
+    status: "rate_limited",
+    statusLabel: `Rate limited (${cooldownSec}s cooldown)`,
+    isZeroQuota: false,
+    retryAfter,
+    retryDelaySec: cooldownSec,
+    reason,
+    lastChecked: Date.now(),
+  }
+  modelStatusMap.set(modelId, updated)
+  return updated
+}
+
+/**
  * Mark a model as successfully verified / available.
  */
 export function markModelSuccess(modelId: string) {
@@ -359,32 +379,45 @@ export function markModelSuccess(modelId: string) {
 }
 
 /**
- * Parallel AI Race Runner:
- * Calls all eligible Gemini models concurrently.
- * First valid structured response wins; others are aborted immediately.
+ * Generic Parallel AI Race Runner for structured JSON generation:
+ * Dispatches parallel requests to all eligible Gemini models.
+ * The fastest valid response wins; remaining requests are aborted immediately.
+ * Models encountering 429 are dynamically cooled down and removed from active racing.
  */
-export async function raceGeminiShortlist(options: {
-  apiKey: string
+export async function raceGeminiGeneric<T = any>(options: {
+  apiKey?: string
   systemPrompt: string
   userPrompt: string
+  validate?: (parsed: any) => boolean
   candidateModels?: string[]
   timeoutMs?: number
+  temperature?: number
 }): Promise<{
-  data: any
+  data: T
   winningModel: string
   winningModelLabel: string
   raceDurationMs: number
   participatingModels: string[]
   modelStatuses: ModelStatusRecord[]
 }> {
-  const { apiKey, systemPrompt, userPrompt, timeoutMs = 45000 } = options
-  const allCandidates = options.candidateModels && options.candidateModels.length > 0
-    ? options.candidateModels
-    : DEFAULT_RACING_MODELS
+  const apiKey =
+    options.apiKey ||
+    process.env.GEMINI_API_KEY ||
+    process.env.GOOGLE_GENERATIVE_AI_API_KEY ||
+    ""
+
+  if (!apiKey) {
+    throw new Error("Missing Gemini API Key for model race")
+  }
+
+  const { systemPrompt, userPrompt, validate, timeoutMs = 35000, temperature = 0.1 } = options
+  const allCandidates =
+    options.candidateModels && options.candidateModels.length > 0
+      ? options.candidateModels
+      : DEFAULT_RACING_MODELS
 
   const eligibleModels = getEligibleRacingModels(allCandidates)
 
-  // If no models eligible, throw so caller can invoke deterministic fallback
   if (eligibleModels.length === 0) {
     throw new Error("ALL_MODELS_IN_COOLDOWN")
   }
@@ -396,18 +429,18 @@ export async function raceGeminiShortlist(options: {
   let isRaceSettled = false
   const modelOutcomes: Array<{ model: string; error?: any; status?: number }> = []
 
-  const fullPrompt = `${systemPrompt}\n\n${userPrompt}\n\nRespond strictly with valid JSON conforming to the requested schema. No markdown wrapping.`
+  const fullPrompt = `${systemPrompt}\n\n${userPrompt}\n\nRespond strictly with valid JSON conforming to the requested schema. No markdown wrapping or commentary.`
 
   const bodyString = JSON.stringify({
     contents: [{ parts: [{ text: fullPrompt }] }],
     generationConfig: {
       responseMimeType: "application/json",
-      temperature: 0.1,
+      temperature,
     },
   })
 
   try {
-    const result = await new Promise<{ data: any; winningModel: string }>((resolve, reject) => {
+    const result = await new Promise<{ data: T; winningModel: string }>((resolve, reject) => {
       let pendingCount = eligibleModels.length
 
       const checkAllDone = () => {
@@ -415,7 +448,7 @@ export async function raceGeminiShortlist(options: {
         if (pendingCount <= 0) {
           isRaceSettled = true
           clearTimeout(timeoutId)
-          reject(new Error("All racing models failed to return a valid response"))
+          reject(new Error("All racing Gemini models failed to return a valid response"))
         }
       }
 
@@ -452,14 +485,14 @@ export async function raceGeminiShortlist(options: {
             let parsed: any
             try {
               parsed = JSON.parse(cleanJson)
-            } catch (parseErr) {
+            } catch {
               modelOutcomes.push({ model: modelId, error: "Invalid JSON format" })
               return
             }
 
-            // Verify basic report structure
-            if (!parsed.ranking || !Array.isArray(parsed.ranking)) {
-              modelOutcomes.push({ model: modelId, error: "Missing ranking array" })
+            // Custom validation rule if specified
+            if (validate && !validate(parsed)) {
+              modelOutcomes.push({ model: modelId, error: "Output failed schema validation criteria" })
               return
             }
 
@@ -469,7 +502,7 @@ export async function raceGeminiShortlist(options: {
             masterAbort.abort() // Cancel all other pending network requests immediately
 
             markModelSuccess(modelId)
-            resolve({ data: parsed, winningModel: modelId })
+            resolve({ data: parsed as T, winningModel: modelId })
           })
           .catch((err) => {
             if (err.name !== "AbortError") {
@@ -496,4 +529,29 @@ export async function raceGeminiShortlist(options: {
   } finally {
     clearTimeout(timeoutId)
   }
+}
+
+/**
+ * Parallel AI Race Runner for Shortlisting Agent:
+ * Calls all eligible Gemini models concurrently.
+ * First valid structured response wins; others are aborted immediately.
+ */
+export async function raceGeminiShortlist(options: {
+  apiKey: string
+  systemPrompt: string
+  userPrompt: string
+  candidateModels?: string[]
+  timeoutMs?: number
+}): Promise<{
+  data: any
+  winningModel: string
+  winningModelLabel: string
+  raceDurationMs: number
+  participatingModels: string[]
+  modelStatuses: ModelStatusRecord[]
+}> {
+  return raceGeminiGeneric({
+    ...options,
+    validate: (parsed) => Boolean(parsed && Array.isArray(parsed.ranking)),
+  })
 }

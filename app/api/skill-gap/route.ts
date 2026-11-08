@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { generateObject } from "ai"
 import { z } from "zod"
 import { getChatModel } from "@/lib/ai/model"
+import { raceGeminiGeneric } from "@/lib/ai/gemini-race"
 import { resolveReliableUrl } from "@/lib/study-plan/url-resolver"
 import { getSessionUser } from "@/lib/session"
 
@@ -276,28 +277,40 @@ ${jobDocument}
 Conduct a comprehensive RAG-grounded skill gap analysis comparing the candidate's verified resume evidence against this target job description. Identify genuine strong skills with citations, prioritized skill gaps with root causes, adjacent transferable skills, and anticipated interview questions.`
 
     try {
-      const { object } = await generateObject({
-        model: getChatModel("gemini-3.8-flash"),
-        system: RAG_SYSTEM_PROMPT,
-        schema: skillGapAnalysisSchema,
-        prompt,
-        maxRetries: 1,
+      const raceResult = await raceGeminiGeneric<SkillGapAnalysisResult>({
+        systemPrompt: RAG_SYSTEM_PROMPT,
+        userPrompt: prompt,
+        validate: (parsed) => Boolean(parsed && parsed.matchSummary && Array.isArray(parsed.gaps)),
+        timeoutMs: 30000,
       })
 
-      const sanitized = sanitizeAnalysisUrls(object)
-      return NextResponse.json({ success: true, analysis: sanitized, source: "gemini-3.8-flash" })
-    } catch (primaryErr) {
-      console.warn("[skill-gap] Primary model gemini-3.8-flash failed, falling back to gemini-3.1-flash-lite:", primaryErr)
+      const sanitized = sanitizeAnalysisUrls(raceResult.data)
+      return NextResponse.json({
+        success: true,
+        analysis: sanitized,
+        source: raceResult.winningModel,
+        winningModel: raceResult.winningModel,
+        winningModelLabel: raceResult.winningModelLabel,
+        raceDurationMs: raceResult.raceDurationMs,
+      })
+    } catch (raceErr) {
+      console.warn("[skill-gap] AI race failed or in cooldown, trying single model fallback:", raceErr)
       try {
         const { object } = await generateObject({
-          model: getChatModel("gemini-3.1-flash-lite"),
+          model: getChatModel("gemini-3.5-flash-lite"),
           system: RAG_SYSTEM_PROMPT,
           schema: skillGapAnalysisSchema,
           prompt,
           maxRetries: 1,
         })
         const sanitized = sanitizeAnalysisUrls(object)
-        return NextResponse.json({ success: true, analysis: sanitized, source: "gemini-3.1-flash-lite" })
+        return NextResponse.json({
+          success: true,
+          analysis: sanitized,
+          source: "gemini-3.5-flash-lite",
+          winningModel: "gemini-3.5-flash-lite",
+          winningModelLabel: "Gemini 3.5 Flash-Lite",
+        })
       } catch (fallbackErr) {
         console.warn("[skill-gap] Fallback model failed, using deterministic RAG matcher:", fallbackErr)
         const deterministic = generateDeterministicRagAnalysis(job, profile)

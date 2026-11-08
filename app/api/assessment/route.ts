@@ -152,8 +152,14 @@ export async function POST(req: Request) {
   }
 
   try {
-    const { questions, fallback } = await generateAssessment({ job, config })
-    return NextResponse.json({ questions, fallback })
+    const result = await generateAssessment({ job, config })
+    return NextResponse.json({
+      questions: result.questions,
+      fallback: result.fallback,
+      winningModel: result.winningModel,
+      winningModelLabel: result.winningModelLabel,
+      raceDurationMs: result.raceDurationMs,
+    })
   } catch (error) {
     // Do not leak API keys or raw server errors to the client.
     console.error("[v0] assessment route error:", error)

@@ -3,21 +3,8 @@ import { generateObject } from "ai"
 import { z } from "zod"
 import type { Assessment } from "@/lib/demo-data"
 import type { ShortEval } from "@/lib/assessment/grade"
-
-/**
- * Server-side short-answer evaluator.
- *
- *   short answers + expected key points -> LLM (exactly 1 call) -> scores
- *
- * Reuses the same AI SDK / Gateway setup as the other agents. To keep cost and
- * latency low, ALL short answers in a submission are scored in a single
- * structured call — never one call per question. MCQs are graded deterministically
- * elsewhere and coding answers are left for manual review, so they are not sent
- * here. If this call fails, the caller marks the short answers "Requires Review"
- * rather than fabricating a score.
- */
-
 import { getChatModel } from "@/lib/ai/model"
+import { raceGeminiGeneric } from "@/lib/ai/gemini-race"
 
 const evalSchema = z.object({
   evaluations: z.array(
@@ -58,28 +45,44 @@ export async function evaluateShortAnswers(input: {
     candidateAnswer: (answers[q.id] ?? "").trim() || "(no answer provided)",
   }))
 
-  const { object } = await generateObject({
-    model: getChatModel(),
-    system: SYSTEM,
-    schema: evalSchema,
-    prompt:
-      `Assessment: ${assessment.title} for ${assessment.jobTitle} at ${assessment.company}.\n\n` +
-      `Score each of the following short answers from 0 to 100 against its expected key points. ` +
-      `Return exactly one evaluation object per questionId.\n\n` +
-      items
-        .map(
-          (it, i) =>
-            `Question ${i + 1} (id: ${it.questionId}, skill: ${it.skill}):\n` +
-            `${it.question}\n` +
-            `Expected key points: ${it.expectedKeyPoints.join("; ") || "(none provided)"}\n` +
-            `Candidate answer: ${it.candidateAnswer}`,
-        )
-        .join("\n\n"),
-  })
+  const prompt =
+    `Assessment: ${assessment.title} for ${assessment.jobTitle} at ${assessment.company}.\n\n` +
+    `Score each of the following short answers from 0 to 100 against its expected key points. ` +
+    `Return exactly one evaluation object per questionId.\n\n` +
+    items
+      .map(
+        (it, i) =>
+          `Question ${i + 1} (id: ${it.questionId}, skill: ${it.skill}):\n` +
+          `${it.question}\n` +
+          `Expected key points: ${it.expectedKeyPoints.join("; ") || "(none provided)"}\n` +
+          `Candidate answer: ${it.candidateAnswer}`,
+      )
+      .join("\n\n")
+
+  let parsedEvaluations: z.infer<typeof evalSchema>["evaluations"] = []
+
+  try {
+    const raceResult = await raceGeminiGeneric<z.infer<typeof evalSchema>>({
+      systemPrompt: SYSTEM,
+      userPrompt: prompt,
+      validate: (parsed) => Boolean(parsed && Array.isArray(parsed.evaluations)),
+      timeoutMs: 25000,
+    })
+    parsedEvaluations = raceResult.data.evaluations
+  } catch (raceErr) {
+    console.warn("[evaluate-agent] AI race failed or in cooldown, trying single model fallback:", raceErr)
+    const { object } = await generateObject({
+      model: getChatModel("gemini-3.5-flash-lite"),
+      system: SYSTEM,
+      schema: evalSchema,
+      prompt,
+    })
+    parsedEvaluations = object.evaluations
+  }
 
   const map: Record<string, ShortEval> = {}
   const validIds = new Set(shortQuestions.map((q) => q.id))
-  for (const e of object.evaluations) {
+  for (const e of parsedEvaluations) {
     if (validIds.has(e.questionId)) {
       map[e.questionId] = { questionId: e.questionId, score: e.score, note: e.note }
     }

@@ -2,20 +2,8 @@ import "server-only"
 import { generateObject } from "ai"
 import { z } from "zod"
 import type { AssessmentConfig, AssessmentQuestion, Difficulty, Job, QuestionType } from "@/lib/demo-data"
-
-/**
- * Server-side Assessment Agent.
- *
- *   job requirements + assessment config -> LLM (1 call) -> structured questions
- *
- * Reuses the same AI SDK / Gateway setup as the Interview and CV agents. Exactly
- * one generation call is made per assessment. Questions are grounded in the
- * selected job's required skills and the recruiter's chosen topics; the agent
- * must not invent an unrelated skill set. If the provider is unavailable, a
- * deterministic fallback derived from the same job keeps the builder working.
- */
-
 import { getChatModel } from "@/lib/ai/model"
+import { raceGeminiGeneric } from "@/lib/ai/gemini-race"
 
 // One flat schema (not a discriminated union) keeps the single generateObject
 // call reliable across models; the fields are normalised into the typed union.
@@ -54,39 +42,75 @@ function typeList(types: QuestionType[]): string {
 export async function generateAssessment(input: {
   job: Job
   config: AssessmentConfig
-}): Promise<{ questions: AssessmentQuestion[]; fallback: boolean }> {
+}): Promise<{
+  questions: AssessmentQuestion[]
+  fallback: boolean
+  winningModel?: string
+  winningModelLabel?: string
+  raceDurationMs?: number
+}> {
   const { job, config } = input
   const topics = config.topics.length ? config.topics : job.requiredSkills
   const count = Math.min(Math.max(config.questionCount, 1), 12)
 
+  const prompt =
+    `Target job: ${job.title} at ${job.company}\n` +
+    `Job description: ${job.description}\n` +
+    `Required skills: ${job.requiredSkills.join(", ")}\n\n` +
+    `Assessment title: ${config.title}\n` +
+    `Overall difficulty: ${config.difficulty}\n` +
+    `Skills/topics to evaluate: ${topics.join(", ")}\n` +
+    `Allowed question types: ${typeList(config.questionTypes)}\n` +
+    `Generate exactly ${count} questions. Distribute them across the allowed question types and across the topics above. ` +
+    `Keep every question grounded in the required skills for this job — do not test unrelated technologies.`
+
   try {
-    const { object } = await generateObject({
-      model: getChatModel(),
-      system: SYSTEM,
-      schema: genSchema,
-      prompt:
-        `Target job: ${job.title} at ${job.company}\n` +
-        `Job description: ${job.description}\n` +
-        `Required skills: ${job.requiredSkills.join(", ")}\n\n` +
-        `Assessment title: ${config.title}\n` +
-        `Overall difficulty: ${config.difficulty}\n` +
-        `Skills/topics to evaluate: ${topics.join(", ")}\n` +
-        `Allowed question types: ${typeList(config.questionTypes)}\n` +
-        `Generate exactly ${count} questions. Distribute them across the allowed question types and across the topics above. ` +
-        `Keep every question grounded in the required skills for this job — do not test unrelated technologies.`,
+    const raceResult = await raceGeminiGeneric<z.infer<typeof genSchema>>({
+      systemPrompt: SYSTEM,
+      userPrompt: prompt,
+      validate: (parsed) => Boolean(parsed && Array.isArray(parsed.questions) && parsed.questions.length > 0),
+      timeoutMs: 30000,
     })
 
     const allowed = new Set(config.questionTypes)
-    const questions = object.questions
+    const questions = raceResult.data.questions
       .filter((q) => allowed.has(q.type))
       .slice(0, count)
       .map((q) => normalize(q, config.difficulty))
 
     if (questions.length === 0) return { questions: fallbackQuestions(job, config), fallback: true }
-    return { questions, fallback: false }
+    return {
+      questions,
+      fallback: false,
+      winningModel: raceResult.winningModel,
+      winningModelLabel: raceResult.winningModelLabel,
+      raceDurationMs: raceResult.raceDurationMs,
+    }
   } catch (error) {
-    console.error("[v0] assessment agent error:", error)
-    return { questions: fallbackQuestions(job, config), fallback: true }
+    console.warn("[assessment agent] AI race failed or unavailable, trying fallback model:", error)
+    try {
+      const { object } = await generateObject({
+        model: getChatModel("gemini-3.5-flash-lite"),
+        system: SYSTEM,
+        schema: genSchema,
+        prompt,
+      })
+      const allowed = new Set(config.questionTypes)
+      const questions = object.questions
+        .filter((q) => allowed.has(q.type))
+        .slice(0, count)
+        .map((q) => normalize(q, config.difficulty))
+      if (questions.length === 0) return { questions: fallbackQuestions(job, config), fallback: true }
+      return {
+        questions,
+        fallback: false,
+        winningModel: "gemini-3.5-flash-lite",
+        winningModelLabel: "Gemini 3.5 Flash-Lite",
+      }
+    } catch (fallbackErr) {
+      console.error("[assessment agent] All models failed, using deterministic fallback:", fallbackErr)
+      return { questions: fallbackQuestions(job, config), fallback: true }
+    }
   }
 }
 

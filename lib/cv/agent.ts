@@ -2,20 +2,8 @@ import "server-only"
 import { generateObject } from "ai"
 import { z } from "zod"
 import { computeMatch, type CandidateProfile, type Job, type TailoredCv, type TruthCheck } from "@/lib/demo-data"
-
-/**
- * Server-side CV Tailoring + Truthfulness agents.
- *
- *   profile + job -> LLM (1 call) -> tailored CV
- *   profile + tailored CV -> LLM (1 call) -> claim-by-claim evidence check
- *
- * Reuses the same AI SDK / Gateway setup as the Interview Agent. The tailoring
- * agent is grounded strictly in the candidate's evidence and must never invent
- * facts. If the provider is unavailable, deterministic fallbacks derived from
- * the same evidence keep the UI working without leaking errors.
- */
-
 import { getChatModel } from "@/lib/ai/model"
+import { raceGeminiGeneric } from "@/lib/ai/gemini-race"
 
 function evidenceBlock(profile: CandidateProfile): string {
   const exp = profile.experience
@@ -52,38 +40,74 @@ const TAILOR_SYSTEM =
 export async function tailorCv(input: {
   profile: CandidateProfile
   job: Job
-}): Promise<{ tailored: TailoredCv; fallback: boolean }> {
+}): Promise<{
+  tailored: TailoredCv
+  fallback: boolean
+  winningModel?: string
+  winningModelLabel?: string
+  raceDurationMs?: number
+}> {
   const { profile, job } = input
   const match = computeMatch(profile, job)
 
+  const prompt =
+    `Candidate evidence (the only source of truth):\n${evidenceBlock(profile)}\n\n` +
+    `Target job: ${job.title} at ${job.company}\n` +
+    `Required skills: ${job.requiredSkills.join(", ")}\n` +
+    `Job description: ${job.description}\n\n` +
+    `Tailor the CV toward this job. Emphasise overlapping skills (${match.matching.join(", ") || "none"}). ` +
+    `Do NOT add missing required skills (${match.gaps.join(", ") || "none"}); mention them only as a gap in suggestions.`
+
   try {
-    const { object } = await generateObject({
-      model: getChatModel(),
-      system: TAILOR_SYSTEM,
-      schema: cvSchema,
-      prompt:
-        `Candidate evidence (the only source of truth):\n${evidenceBlock(profile)}\n\n` +
-        `Target job: ${job.title} at ${job.company}\n` +
-        `Required skills: ${job.requiredSkills.join(", ")}\n` +
-        `Job description: ${job.description}\n\n` +
-        `Tailor the CV toward this job. Emphasise overlapping skills (${match.matching.join(", ") || "none"}). ` +
-        `Do NOT add missing required skills (${match.gaps.join(", ") || "none"}); mention them only as a gap in suggestions.`,
+    const raceResult = await raceGeminiGeneric<z.infer<typeof cvSchema>>({
+      systemPrompt: TAILOR_SYSTEM,
+      userPrompt: prompt,
+      validate: (parsed) => Boolean(parsed && parsed.summary && Array.isArray(parsed.skills)),
+      timeoutMs: 25000,
     })
-    // Guard: never let the model emit skills the candidate does not have.
+
+    const object = raceResult.data
     const known = new Set(profile.skills.map((s) => s.toLowerCase()))
     const skills = object.skills.filter((s) => known.has(s.toLowerCase()))
+
     return {
       tailored: {
         summary: object.summary,
         skills: skills.length ? skills : profile.skills,
-        experienceImprovements: object.experienceImprovements.slice(0, 3),
-        suggestions: object.suggestions.slice(0, 4),
+        experienceImprovements: (object.experienceImprovements || []).slice(0, 3),
+        suggestions: (object.suggestions || []).slice(0, 4),
       },
       fallback: false,
+      winningModel: raceResult.winningModel,
+      winningModelLabel: raceResult.winningModelLabel,
+      raceDurationMs: raceResult.raceDurationMs,
     }
   } catch (error) {
-    console.error("[v0] cv tailor agent error:", error)
-    return { tailored: fallbackCv(profile, job, match), fallback: true }
+    console.warn("[cv tailor agent] AI race failed or unavailable, checking fallback model:", error)
+    try {
+      const { object } = await generateObject({
+        model: getChatModel("gemini-3.5-flash-lite"),
+        system: TAILOR_SYSTEM,
+        schema: cvSchema,
+        prompt,
+      })
+      const known = new Set(profile.skills.map((s) => s.toLowerCase()))
+      const skills = object.skills.filter((s) => known.has(s.toLowerCase()))
+      return {
+        tailored: {
+          summary: object.summary,
+          skills: skills.length ? skills : profile.skills,
+          experienceImprovements: object.experienceImprovements.slice(0, 3),
+          suggestions: object.suggestions.slice(0, 4),
+        },
+        fallback: false,
+        winningModel: "gemini-3.5-flash-lite",
+        winningModelLabel: "Gemini 3.5 Flash-Lite",
+      }
+    } catch (fallbackErr) {
+      console.error("[cv tailor agent] All models failed, using deterministic fallback:", fallbackErr)
+      return { tailored: fallbackCv(profile, job, match), fallback: true }
+    }
   }
 }
 
@@ -121,28 +145,59 @@ const TRUTH_SYSTEM =
 export async function validateCv(input: {
   profile: CandidateProfile
   cv: TailoredCv
-}): Promise<{ result: TruthCheck; fallback: boolean }> {
+}): Promise<{
+  result: TruthCheck
+  fallback: boolean
+  winningModel?: string
+  winningModelLabel?: string
+  raceDurationMs?: number
+}> {
   const { profile, cv } = input
   const cvText =
     `Summary: ${cv.summary}\n` +
     `Skills: ${cv.skills.join(", ")}\n` +
     `Experience statements:\n${cv.experienceImprovements.map((e) => `- ${e.after}`).join("\n")}`
 
+  const prompt =
+    `Candidate original evidence:\n${evidenceBlock(profile)}\n\n` +
+    `Tailored CV to check:\n${cvText}\n\n` +
+    `Extract the notable factual claims from the tailored CV and classify each against the evidence. ` +
+    `Set 'overall' to the least favourable status among the claims (unsupported > needs_review > supported).`
+
   try {
-    const { object } = await generateObject({
-      model: getChatModel(),
-      system: TRUTH_SYSTEM,
-      schema: truthSchema,
-      prompt:
-        `Candidate original evidence:\n${evidenceBlock(profile)}\n\n` +
-        `Tailored CV to check:\n${cvText}\n\n` +
-        `Extract the notable factual claims from the tailored CV and classify each against the evidence. ` +
-        `Set 'overall' to the least favourable status among the claims (unsupported > needs_review > supported).`,
+    const raceResult = await raceGeminiGeneric<z.infer<typeof truthSchema>>({
+      systemPrompt: TRUTH_SYSTEM,
+      userPrompt: prompt,
+      validate: (parsed) => Boolean(parsed && parsed.overall && Array.isArray(parsed.claims)),
+      timeoutMs: 25000,
     })
-    return { result: object, fallback: false }
+
+    return {
+      result: raceResult.data,
+      fallback: false,
+      winningModel: raceResult.winningModel,
+      winningModelLabel: raceResult.winningModelLabel,
+      raceDurationMs: raceResult.raceDurationMs,
+    }
   } catch (error) {
-    console.error("[v0] cv truthfulness agent error:", error)
-    return { result: fallbackCheck(profile, cv), fallback: true }
+    console.warn("[cv truthfulness agent] AI race failed or unavailable, trying fallback model:", error)
+    try {
+      const { object } = await generateObject({
+        model: getChatModel("gemini-3.5-flash-lite"),
+        system: TRUTH_SYSTEM,
+        schema: truthSchema,
+        prompt,
+      })
+      return {
+        result: object,
+        fallback: false,
+        winningModel: "gemini-3.5-flash-lite",
+        winningModelLabel: "Gemini 3.5 Flash-Lite",
+      }
+    } catch (fallbackErr) {
+      console.error("[cv truthfulness agent] All models failed, using deterministic check:", fallbackErr)
+      return { result: fallbackCheck(profile, cv), fallback: true }
+    }
   }
 }
 

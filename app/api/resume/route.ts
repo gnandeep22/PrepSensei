@@ -4,6 +4,7 @@ import { getSessionUser } from "@/lib/session"
 import { saveParsedResume } from "@/lib/profile/server"
 import { getChatModel } from "@/lib/ai/model"
 import { generateText, generateObject } from "ai"
+import { raceGeminiGeneric } from "@/lib/ai/gemini-race"
 import { z } from "zod"
 import type { CandidateProfile } from "@/lib/demo-data"
 
@@ -121,24 +122,35 @@ Output ONLY the raw extracted plain text with natural line breaks. Do not includ
 }
 
 async function parseProfileWithAiFallback(rawText: string): Promise<CandidateProfile | null> {
-  const prompt = `You are an expert Resume Parser and Career Data Analyst.
-Parse the following extracted resume text into a clean, structured candidate profile object.
+  const systemPrompt = "You are an expert Resume Parser and Career Data Analyst."
+  const prompt = `Parse the following extracted resume text into a clean, structured candidate profile object.
 Make sure to extract all programming languages, tools, frameworks, and technologies into the 'skills' list.
 
 Resume Text:
 ${rawText}`
 
   try {
-    const { object } = await generateObject({
-      model: getChatModel("gemini-3.5-flash-lite"),
-      schema: candidateProfileSchema,
-      prompt,
-      maxRetries: 1,
+    const raceResult = await raceGeminiGeneric<CandidateProfile>({
+      systemPrompt,
+      userPrompt: prompt,
+      validate: (parsed) => Boolean(parsed && parsed.name && Array.isArray(parsed.skills)),
+      timeoutMs: 25000,
     })
-    return object as unknown as CandidateProfile
-  } catch (err) {
-    console.warn("[resume] AI structured parse failed, falling back to regex parser:", err)
-    return null
+    return raceResult.data
+  } catch (raceErr) {
+    console.warn("[resume] AI race parse failed or in cooldown, trying single model:", raceErr)
+    try {
+      const { object } = await generateObject({
+        model: getChatModel("gemini-3.5-flash-lite"),
+        schema: candidateProfileSchema,
+        prompt: `${systemPrompt}\n\n${prompt}`,
+        maxRetries: 1,
+      })
+      return object as unknown as CandidateProfile
+    } catch (err) {
+      console.warn("[resume] AI structured parse failed, falling back to regex parser:", err)
+      return null
+    }
   }
 }
 
