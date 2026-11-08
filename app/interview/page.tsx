@@ -4,11 +4,11 @@ import Link from "next/link"
 import { Suspense, useCallback, useEffect, useRef, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import { motion } from "motion/react"
-import { AlertTriangle, ArrowLeft, ArrowRight, Bot, Camera, CameraOff, CheckCircle2, Clock, Eye, EyeOff, Loader2, Mic, MicOff, PhoneOff, RotateCcw, ScanFace, Send, ShieldCheck, Sparkles, Trash2, UserRound, Users } from "lucide-react"
+import { AlertTriangle, ArrowLeft, ArrowRight, Bot, Camera, CameraOff, CheckCircle2, Clock, Eye, EyeOff, HelpCircle, Loader2, Mic, MicOff, PhoneOff, RotateCcw, ScanFace, Send, ShieldCheck, Sparkles, Trash2, UserRound, Users } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useApp } from "@/lib/store"
 import { useSession } from "@/lib/auth-client"
-import { answerFeedback, demoEvaluation, demoJobs, interviewQuestions, type Assessment, type InterviewType } from "@/lib/demo-data"
+import { answerFeedback, demoEvaluation, demoJobs, interviewQuestions, type Assessment, type Evaluation, type InterviewType } from "@/lib/demo-data"
 import { type AnswerResponse, type QAPair, type StartResponse } from "@/lib/interview/protocol"
 import { useSpeechRecognition, useSpeechSynthesis } from "@/lib/interview/use-speech"
 import { AiInterviewer, type AiState } from "@/components/interview/ai-interviewer"
@@ -71,6 +71,7 @@ function InterviewContent() {
   const [isSubmittingToDb, setIsSubmittingToDb] = useState(false)
 
   // Server-Authoritative Timer & Duration Tracking
+  const [interviewStartTime, setInterviewStartTime] = useState<number | null>(null)
   const [interviewSessionId, setInterviewSessionId] = useState<string | null>(null)
   const [durationMinutes, setDurationMinutes] = useState<number>(job.interviewDurationMinutes || 15)
   const [expiresAt, setExpiresAt] = useState<string | null>(null)
@@ -253,6 +254,7 @@ function InterviewContent() {
 
     setStage("live")
     setFeedbacks([])
+    setInterviewStartTime(Date.now())
 
     // Resolve registered face descriptor (supports both array and multi-angle object)
     let descriptorToUse: any = registeredDescriptor
@@ -400,7 +402,23 @@ function InterviewContent() {
       const finalReport = analysis.stop()
       setInterviewReport(finalReport)
 
-      const evalData = result.evaluation ?? demoEvaluation
+      const endMs = Date.now()
+      const elapsedMs = interviewStartTime ? Math.max(1000, endMs - interviewStartTime) : (durationMinutes * 60 * 1000)
+      const elapsedSecs = Math.round(elapsedMs / 1000)
+      const elapsedMins = Math.max(1, Math.round(elapsedSecs / 60))
+      const m = Math.floor(elapsedSecs / 60)
+      const s = elapsedSecs % 60
+      const durationFormatted = m > 0 ? (s > 0 ? `${m}m ${s}s` : `${m} minute${m === 1 ? "" : "s"}`) : `${s}s`
+      const questionsCount = nextHistory.length
+
+      const rawEval = result.evaluation ?? demoEvaluation
+      const evalData: Evaluation = {
+        ...rawEval,
+        durationMinutes: rawEval.durationMinutes ?? elapsedMins,
+        durationSeconds: rawEval.durationSeconds ?? elapsedSecs,
+        durationFormatted: rawEval.durationFormatted ?? durationFormatted,
+        questionsAsked: rawEval.questionsAsked ?? questionsCount,
+      }
       completeInterview(evalData)
       setStage("done")
     } else if (result.nextQuestion) {
@@ -423,7 +441,21 @@ function InterviewContent() {
     const report = analysis.stop()
     setInterviewReport(report)
     if (history.length > 0) {
-      const evalData = demoEvaluation
+      const endMs = Date.now()
+      const elapsedMs = interviewStartTime ? Math.max(1000, endMs - interviewStartTime) : (durationMinutes * 60 * 1000)
+      const elapsedSecs = Math.round(elapsedMs / 1000)
+      const elapsedMins = Math.max(1, Math.round(elapsedSecs / 60))
+      const m = Math.floor(elapsedSecs / 60)
+      const s = elapsedSecs % 60
+      const durationFormatted = m > 0 ? (s > 0 ? `${m}m ${s}s` : `${m} minute${m === 1 ? "" : "s"}`) : `${s}s`
+
+      const evalData: Evaluation = {
+        ...demoEvaluation,
+        durationMinutes: elapsedMins,
+        durationSeconds: elapsedSecs,
+        durationFormatted,
+        questionsAsked: history.length,
+      }
       completeInterview(evalData)
       setStage("done")
     } else {
@@ -445,6 +477,7 @@ function InterviewContent() {
 
   function restart() {
     resetInterview()
+    setInterviewStartTime(null)
     setMessages([])
     setHistory([])
     setFeedbacks([])
@@ -495,15 +528,83 @@ function InterviewContent() {
           </div>
         )}
 
+        {/* Interview Session Key Metrics Banner */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+          <Card className="border-primary/20 bg-primary/[0.03]">
+            <CardContent className="p-3.5 flex items-center gap-3">
+              <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary shrink-0">
+                <Clock className="size-5" />
+              </div>
+              <div className="flex flex-col min-w-0">
+                <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Interview Duration</span>
+                <span className="text-base font-bold text-foreground">
+                  {evaluation.durationFormatted || `${evaluation.durationMinutes ?? durationMinutes} Minutes`}
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-primary/20 bg-primary/[0.03]">
+            <CardContent className="p-3.5 flex items-center gap-3">
+              <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary shrink-0">
+                <HelpCircle className="size-5" />
+              </div>
+              <div className="flex flex-col min-w-0">
+                <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Questions Asked</span>
+                <span className="text-base font-bold text-foreground">
+                  {evaluation.questionsAsked ?? history.length} Questions
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-primary/20 bg-primary/[0.03]">
+            <CardContent className="p-3.5 flex items-center gap-3">
+              <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary shrink-0">
+                <Sparkles className="size-5" />
+              </div>
+              <div className="flex flex-col min-w-0">
+                <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Overall Score</span>
+                <span className="text-base font-bold text-primary">
+                  {evaluation.overall}%
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-primary/20 bg-primary/[0.03]">
+            <CardContent className="p-3.5 flex items-center gap-3">
+              <div className="flex size-10 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0">
+                <CheckCircle2 className="size-5" />
+              </div>
+              <div className="flex flex-col min-w-0">
+                <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Session Status</span>
+                <span className="text-base font-bold text-foreground">
+                  Completed
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
         <div className="grid gap-4 lg:grid-cols-3">
           <Card>
             <CardHeader>
               <CardTitle>AI-Generated Interview Evaluation</CardTitle>
-              <CardDescription>Overall score</CardDescription>
+              <CardDescription>Overall performance summary</CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col items-center gap-3">
               <MatchScore score={evaluation.overall} size="lg" label="overall" />
-              <Badge variant="secondary">{history.length} responses evaluated</Badge>
+              <div className="flex flex-wrap items-center justify-center gap-1.5 pt-1">
+                <Badge variant="secondary" className="gap-1 text-xs font-medium">
+                  <Clock className="size-3" />
+                  {evaluation.durationFormatted || `${evaluation.durationMinutes ?? durationMinutes} min`}
+                </Badge>
+                <Badge variant="secondary" className="gap-1 text-xs font-medium">
+                  <HelpCircle className="size-3" />
+                  {evaluation.questionsAsked ?? history.length} questions asked
+                </Badge>
+              </div>
             </CardContent>
           </Card>
           <Card className="lg:col-span-2">

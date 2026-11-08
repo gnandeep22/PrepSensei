@@ -151,14 +151,34 @@ export async function POST(req: Request) {
         targetDurationMinutes: activeSession?.durationMinutes || job.interviewDurationMinutes || 15,
       })
 
-      // 3. If finished, mark session completed in PostgreSQL
-      if (result.finished && activeSession) {
-        try {
-          await db
-            .update(interviewSession)
-            .set({ status: "completed", endedAt: new Date(), updatedAt: new Date() })
-            .where(eq(interviewSession.id, activeSession.id))
-        } catch {}
+      // 3. If finished, mark session completed in PostgreSQL and enrich evaluation report
+      if (result.finished) {
+        if (result.evaluation) {
+          const configuredMinutes = activeSession?.durationMinutes || job.interviewDurationMinutes || 15
+          let elapsedSecs = configuredMinutes * 60
+          let elapsedMins = configuredMinutes
+          if (activeSession?.startedAt) {
+            elapsedSecs = Math.max(1, Math.round((Date.now() - activeSession.startedAt.getTime()) / 1000))
+            elapsedMins = Math.max(1, Math.round(elapsedSecs / 60))
+          }
+          const m = Math.floor(elapsedSecs / 60)
+          const s = elapsedSecs % 60
+          result.evaluation.durationMinutes = result.evaluation.durationMinutes ?? elapsedMins
+          result.evaluation.durationSeconds = result.evaluation.durationSeconds ?? elapsedSecs
+          result.evaluation.durationFormatted =
+            result.evaluation.durationFormatted ??
+            (m > 0 ? (s > 0 ? `${m}m ${s}s` : `${m} minute${m === 1 ? "" : "s"}`) : `${s}s`)
+          result.evaluation.questionsAsked = result.evaluation.questionsAsked ?? body.qa.length
+        }
+
+        if (activeSession) {
+          try {
+            await db
+              .update(interviewSession)
+              .set({ status: "completed", endedAt: new Date(), updatedAt: new Date() })
+              .where(eq(interviewSession.id, activeSession.id))
+          } catch {}
+        }
       }
 
       return NextResponse.json({

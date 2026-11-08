@@ -13,6 +13,7 @@ import {
   CheckCircle2,
   Clock,
   ExternalLink,
+  HelpCircle,
   Lock,
   Loader2,
   Mic,
@@ -93,6 +94,7 @@ function OfficialInterviewContent() {
   const [finalEvaluation, setFinalEvaluation] = useState<any | null>(null)
 
   // Server-Authoritative Session & Time Duration Tracking
+  const [interviewStartTime, setInterviewStartTime] = useState<number | null>(null)
   const [interviewSessionId, setInterviewSessionId] = useState<string | null>(null)
   const [durationMinutes, setDurationMinutes] = useState<number>(15)
   const [expiresAt, setExpiresAt] = useState<string | null>(null)
@@ -256,6 +258,7 @@ function OfficialInterviewContent() {
 
     setStage("live")
     setFeedbacks([])
+    setInterviewStartTime(Date.now())
 
     let descriptorToUse: any = registeredDescriptor
     let regPhotos: any = faceRegistrationData?.photos || registeredDescriptor?.photos || null
@@ -398,7 +401,25 @@ function OfficialInterviewContent() {
     setAiState("idle")
     const finalReport = analysis.stop()
     setInterviewReport(finalReport)
-    setFinalEvaluation(evalData)
+
+    const endMs = Date.now()
+    const elapsedMs = interviewStartTime ? Math.max(1000, endMs - interviewStartTime) : (durationMinutes * 60 * 1000)
+    const elapsedSecs = Math.round(elapsedMs / 1000)
+    const elapsedMins = Math.max(1, Math.round(elapsedSecs / 60))
+    const m = Math.floor(elapsedSecs / 60)
+    const s = elapsedSecs % 60
+    const durationFormatted = m > 0 ? (s > 0 ? `${m}m ${s}s` : `${m} minute${m === 1 ? "" : "s"}`) : `${s}s`
+    const questionsCount = finalHistory.length
+
+    const enrichedEval = {
+      ...evalData,
+      durationMinutes: evalData.durationMinutes ?? elapsedMins,
+      durationSeconds: evalData.durationSeconds ?? elapsedSecs,
+      durationFormatted: evalData.durationFormatted ?? durationFormatted,
+      questionsAsked: evalData.questionsAsked ?? questionsCount,
+    }
+
+    setFinalEvaluation(enrichedEval)
     setStage("done")
 
     const answersObj: Record<string, string> = {}
@@ -417,8 +438,8 @@ function OfficialInterviewContent() {
           assessmentId: recruiterAssessment?.id || undefined,
           jobId: targetJob?.id || jobId,
           answers: answersObj,
-          durationSeconds: finalReport.totalDurationSec,
-          interview: evalData,
+          durationSeconds: elapsedSecs,
+          interview: enrichedEval,
           report: finalReport,
         }),
       })
@@ -1000,19 +1021,87 @@ function OfficialInterviewContent() {
           </div>
         </div>
 
+        {/* Official Interview Session Key Metrics Banner */}
+        {finalEvaluation && (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <Card className="border-primary/20 bg-primary/[0.03]">
+              <CardContent className="p-3.5 flex items-center gap-3">
+                <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary shrink-0">
+                  <Clock className="size-5" />
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Interview Duration</span>
+                  <span className="text-base font-bold text-foreground">
+                    {finalEvaluation.durationFormatted || `${finalEvaluation.durationMinutes ?? durationMinutes} Minutes`}
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-primary/20 bg-primary/[0.03]">
+              <CardContent className="p-3.5 flex items-center gap-3">
+                <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary shrink-0">
+                  <HelpCircle className="size-5" />
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Questions Asked</span>
+                  <span className="text-base font-bold text-foreground">
+                    {finalEvaluation.questionsAsked ?? history.length} Questions
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-primary/20 bg-primary/[0.03]">
+              <CardContent className="p-3.5 flex items-center gap-3">
+                <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary shrink-0">
+                  <Sparkles className="size-5" />
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Official Score</span>
+                  <span className="text-base font-bold text-primary">
+                    {finalEvaluation.overall}%
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-primary/20 bg-primary/[0.03]">
+              <CardContent className="p-3.5 flex items-center gap-3">
+                <div className="flex size-10 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0">
+                  <CheckCircle2 className="size-5" />
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Recruiter Portal</span>
+                  <span className="text-base font-bold text-emerald-600 dark:text-emerald-400">
+                    Recorded
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
         {/* Score & Summary Grid */}
         {finalEvaluation && (
           <div className="grid gap-4 md:grid-cols-3">
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm">Official Score</CardTitle>
-                <CardDescription className="text-xs">Overall Performance</CardDescription>
+                <CardDescription className="text-xs">Overall Performance Summary</CardDescription>
               </CardHeader>
               <CardContent className="flex flex-col items-center gap-2 pt-2">
                 <MatchScore score={finalEvaluation.overall} size="lg" label="overall" />
-                <Badge variant="secondary" className="text-xs mt-1">
-                  {history.length} Responses Evaluated
-                </Badge>
+                <div className="flex flex-wrap items-center justify-center gap-1.5 pt-1">
+                  <Badge variant="secondary" className="gap-1 text-xs font-medium">
+                    <Clock className="size-3" />
+                    {finalEvaluation.durationFormatted || `${finalEvaluation.durationMinutes ?? durationMinutes} min`}
+                  </Badge>
+                  <Badge variant="secondary" className="gap-1 text-xs font-medium">
+                    <HelpCircle className="size-3" />
+                    {finalEvaluation.questionsAsked ?? history.length} questions asked
+                  </Badge>
+                </div>
               </CardContent>
             </Card>
 

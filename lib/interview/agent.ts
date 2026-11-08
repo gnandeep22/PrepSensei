@@ -128,6 +128,10 @@ const answerSchema = z.object({
   finalEvaluation: z
     .object({
       overall: z.number().min(0).max(100),
+      durationMinutes: z.number().optional().describe("Total interview duration in minutes"),
+      durationSeconds: z.number().optional().describe("Total interview duration in seconds"),
+      durationFormatted: z.string().optional().describe("Formatted interview duration (e.g. '15 minutes')"),
+      questionsAsked: z.number().optional().describe("Total questions asked and answered during the session"),
       breakdown: z.array(z.object({ label: z.string(), score: z.number().min(0).max(100) })),
       criteriaEvaluation: z
         .array(
@@ -170,7 +174,7 @@ export async function evaluateAnswer(input: {
   finished: boolean
   evaluation: Evaluation | null
 }> {
-  const { job, profile, type, qa, screeningQuestions, evaluationCriteria, interviewSessionId, candidateUserId, timeExpired } = input
+  const { job, profile, type, qa, screeningQuestions, evaluationCriteria, interviewSessionId, candidateUserId, timeExpired, targetDurationMinutes } = input
   const last = qa[qa.length - 1]
 
   // Time-Driven Interview Stopping Condition:
@@ -288,19 +292,35 @@ export async function evaluateAnswer(input: {
       candidateUserId,
     })
 
+    const evalDurationMins = targetDurationMinutes || job.interviewDurationMinutes || 15
+    const finalEval = object.finalEvaluation
+      ? {
+          ...object.finalEvaluation,
+          durationMinutes: object.finalEvaluation.durationMinutes ?? evalDurationMins,
+          durationSeconds: object.finalEvaluation.durationSeconds ?? evalDurationMins * 60,
+          durationFormatted: object.finalEvaluation.durationFormatted ?? `${evalDurationMins} minute${evalDurationMins === 1 ? "" : "s"}`,
+          questionsAsked: object.finalEvaluation.questionsAsked ?? qa.length,
+        }
+      : null
+
     return {
       feedback: object.feedback,
       score: object.score,
       nextQuestion: isFinal ? null : object.nextQuestion,
       finished: isFinal,
-      evaluation: isFinal ? object.finalEvaluation : null,
+      evaluation: isFinal ? finalEval : null,
     }
   } catch (error) {
     console.warn("[interview-agent] Resilient fallback for answer evaluation:", error)
     // Guarantee that candidate progress is never terminated or lost
     const score = Math.max(65, Math.min(92, Math.round(75 + (last.answer.length > 100 ? 8 : 0))))
+    const fallbackMins = targetDurationMinutes || job.interviewDurationMinutes || 15
     const fallbackEvaluation: Evaluation = {
       overall: score,
+      durationMinutes: fallbackMins,
+      durationSeconds: fallbackMins * 60,
+      durationFormatted: `${fallbackMins} minute${fallbackMins === 1 ? "" : "s"}`,
+      questionsAsked: qa.length,
       breakdown: [
         { label: "Technical Knowledge", score: Math.min(95, score + 2) },
         { label: "Communication", score: Math.min(95, score + 4) },

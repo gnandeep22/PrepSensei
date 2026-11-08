@@ -386,10 +386,18 @@ export type Evaluation = {
   strengths: string[]
   improvements: string[]
   summary?: string
+  durationMinutes?: number
+  durationSeconds?: number
+  durationFormatted?: string
+  questionsAsked?: number
 }
 
 export const demoEvaluation: Evaluation = {
   overall: 78,
+  durationMinutes: 15,
+  durationSeconds: 900,
+  durationFormatted: "15 minutes",
+  questionsAsked: 6,
   breakdown: [
     { label: "Technical Knowledge", score: 82 },
     { label: "Communication", score: 76 },
@@ -744,6 +752,10 @@ export const demoSubmissions: AssessmentSubmission[] = [
     },
     interview: {
       overall: 81,
+      durationMinutes: 15,
+      durationSeconds: 900,
+      durationFormatted: "15 minutes",
+      questionsAsked: 7,
       breakdown: [
         { label: "Technical Knowledge", score: 85 },
         { label: "Communication", score: 78 },
@@ -827,6 +839,10 @@ export const demoSubmissions: AssessmentSubmission[] = [
     },
     interview: {
       overall: 69,
+      durationMinutes: 15,
+      durationSeconds: 900,
+      durationFormatted: "15 minutes",
+      questionsAsked: 5,
       breakdown: [
         { label: "Technical Knowledge", score: 72 },
         { label: "Communication", score: 74 },

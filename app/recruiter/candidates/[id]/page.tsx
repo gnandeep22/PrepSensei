@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { use, useMemo } from "react"
 import { motion } from "motion/react"
-import { ArrowLeft, ClipboardCheck, Loader2, MessagesSquare, Sparkles } from "lucide-react"
+import { ArrowLeft, ClipboardCheck, Clock, HelpCircle, Loader2, MessagesSquare, Sparkles } from "lucide-react"
 import { useApp } from "@/lib/store"
 import { recommendCandidate, type RecommendationTier } from "@/lib/interview/recommendation"
 import { MatchScore, PageHeader, SkillBar, StatCard } from "@/components/shared"
@@ -163,7 +163,16 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ id: 
           value={result.overallScore === null ? "Pending" : `${result.overallScore}%`}
           icon={<ClipboardCheck className="size-4" />}
         />
-        <StatCard label="Interview" value={interview ? `${interview.overall}%` : "—"} icon={<MessagesSquare className="size-4" />} />
+        <StatCard
+          label="Interview"
+          value={interview ? `${interview.overall}%` : "—"}
+          hint={
+            interview
+              ? `${interview.durationFormatted || `${interview.durationMinutes || 15} mins`} · ${interview.questionsAsked || Object.keys(submission.answers || {}).length || 0} questions`
+              : undefined
+          }
+          icon={<MessagesSquare className="size-4" />}
+        />
         <StatCard label="Skills evaluated" value={`${result.skillsEvaluated} / ${result.skillResults.length}`} />
         <StatCard label="Requiring review" value={result.questionsRequiringReview} />
       </motion.div>
@@ -183,7 +192,19 @@ export default function CandidateDetailPage({ params }: { params: Promise<{ id: 
         <CardContent>
           {interview ? (
             <div className="flex flex-col gap-5 sm:flex-row">
-              <MatchScore score={interview.overall} size="md" label="interview" />
+              <div className="flex flex-col items-center gap-2">
+                <MatchScore score={interview.overall} size="md" label="interview" />
+                <div className="flex flex-col items-center gap-1 text-center">
+                  <Badge variant="outline" className="text-[10px] gap-1 font-medium">
+                    <Clock className="size-2.5" />
+                    {interview.durationFormatted || `${interview.durationMinutes || 15} mins`}
+                  </Badge>
+                  <Badge variant="secondary" className="text-[10px] gap-1 font-medium">
+                    <HelpCircle className="size-2.5" />
+                    {interview.questionsAsked || Object.keys(submission.answers || {}).length || 0} questions
+                  </Badge>
+                </div>
+              </div>
               <div className="flex flex-1 flex-col gap-4">
                 {interview.breakdown.map((b: any) => (
                   <SkillBar key={b.label} label={b.label} value={b.score} tone={skillTone(b.score)} />
