@@ -115,6 +115,7 @@ Please generate an in-depth, structured 4-week study plan with authentic, workin
       })
     } catch (raceErr) {
       console.warn("[study-plan] AI race failed or in cooldown, trying single model fallback:", raceErr)
+      const fallbackStart = Date.now()
       try {
         const { object } = await generateObject({
           model: getChatModel("gemini-3.5-flash-lite"),
@@ -129,11 +130,19 @@ Please generate an in-depth, structured 4-week study plan with authentic, workin
           plan: sanitized,
           winningModel: "gemini-3.5-flash-lite",
           winningModelLabel: "Gemini 3.5 Flash-Lite",
+          raceDurationMs: Date.now() - fallbackStart,
         })
       } catch (fallbackErr) {
         console.error("[study-plan] AI generation failed, using structured fallback plan:", fallbackErr)
         const fallbackPlan = sanitizePlanUrls(createDynamicFallbackPlan(jobTitle, company, requiredSkills, gaps))
-        return NextResponse.json({ success: true, plan: fallbackPlan, isFallback: true })
+        return NextResponse.json({
+          success: true,
+          plan: fallbackPlan,
+          isFallback: true,
+          winningModel: "deterministic-engine",
+          winningModelLabel: "Deterministic Plan Builder",
+          raceDurationMs: Date.now() - fallbackStart,
+        })
       }
     }
   } catch (error: any) {

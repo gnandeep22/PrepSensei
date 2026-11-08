@@ -295,6 +295,7 @@ Conduct a comprehensive RAG-grounded skill gap analysis comparing the candidate'
       })
     } catch (raceErr) {
       console.warn("[skill-gap] AI race failed or in cooldown, trying single model fallback:", raceErr)
+      const fallbackStart = Date.now()
       try {
         const { object } = await generateObject({
           model: getChatModel("gemini-3.5-flash-lite"),
@@ -310,11 +311,19 @@ Conduct a comprehensive RAG-grounded skill gap analysis comparing the candidate'
           source: "gemini-3.5-flash-lite",
           winningModel: "gemini-3.5-flash-lite",
           winningModelLabel: "Gemini 3.5 Flash-Lite",
+          raceDurationMs: Date.now() - fallbackStart,
         })
       } catch (fallbackErr) {
         console.warn("[skill-gap] Fallback model failed, using deterministic RAG matcher:", fallbackErr)
         const deterministic = generateDeterministicRagAnalysis(job, profile)
-        return NextResponse.json({ success: true, analysis: deterministic, source: "deterministic-rag" })
+        return NextResponse.json({
+          success: true,
+          analysis: deterministic,
+          source: "deterministic-rag",
+          winningModel: "deterministic-rag",
+          winningModelLabel: "Deterministic RAG Grounding Engine",
+          raceDurationMs: Date.now() - fallbackStart,
+        })
       }
     }
   } catch (err: any) {
