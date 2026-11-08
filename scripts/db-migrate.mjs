@@ -223,6 +223,49 @@ create table if not exists "candidate_study_progress" (
 );
 create unique index if not exists "candidate_study_progress_user_job_week_idx" on "candidate_study_progress" ("user_id", "job_id", "week");
 create index if not exists "candidate_study_progress_user_idx" on "candidate_study_progress" ("user_id");
+
+-- Feature: Time-Based Interview Duration & Gemini Capacity Protection
+alter table "job" add column if not exists "interview_duration_minutes" integer not null default 15;
+
+create table if not exists "gemini_api_usage" (
+  "id" text primary key,
+  "model" text not null,
+  "request_count" integer not null default 1,
+  "input_tokens" integer not null default 0,
+  "output_tokens" integer not null default 0,
+  "total_tokens" integer not null default 0,
+  "interview_session_id" text,
+  "job_id" text,
+  "candidate_user_id" text,
+  "request_purpose" text not null,
+  "provider_used" text not null default 'google',
+  "duration_ms" integer,
+  "status" text not null default 'success',
+  "error_message" text,
+  "created_at" timestamp not null default now()
+);
+create index if not exists "gemini_usage_created_idx" on "gemini_api_usage" ("created_at");
+create index if not exists "gemini_usage_session_idx" on "gemini_api_usage" ("interview_session_id");
+create index if not exists "gemini_usage_status_idx" on "gemini_api_usage" ("status");
+
+create table if not exists "interview_session" (
+  "id" text primary key,
+  "candidate_user_id" text not null references "user"("id") on delete cascade,
+  "job_id" text not null references "job"("id") on delete cascade,
+  "assessment_id" text,
+  "duration_minutes" integer not null default 15,
+  "started_at" timestamp not null default now(),
+  "expires_at" timestamp not null,
+  "ended_at" timestamp,
+  "status" text not null default 'in_progress',
+  "current_turn" integer not null default 0,
+  "created_at" timestamp not null default now(),
+  "updated_at" timestamp not null default now()
+);
+create index if not exists "interview_session_candidate_idx" on "interview_session" ("candidate_user_id");
+create index if not exists "interview_session_job_idx" on "interview_session" ("job_id");
+create index if not exists "interview_session_status_idx" on "interview_session" ("status");
+create index if not exists "interview_session_expires_idx" on "interview_session" ("expires_at");
 `
 
 const connectionString = (process.env.DATABASE_URL || "").replace("sslmode=require", "sslmode=verify-full")

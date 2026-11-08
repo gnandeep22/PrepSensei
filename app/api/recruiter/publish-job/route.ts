@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getSessionUser } from "@/lib/session"
 import { db } from "@/lib/db"
 import { job, assessment, user as userTable } from "@/lib/db/schema"
+import { InterviewCapacityService } from "@/lib/interview/capacity-service"
 
 export async function POST(req: NextRequest) {
   try {
@@ -23,10 +24,23 @@ export async function POST(req: NextRequest) {
       requiredSkills = [],
       description,
       interviewQuestions = [],
+      interviewDurationMinutes = 15,
     } = body
 
     if (!title || !description) {
       return NextResponse.json({ error: "Title and description are required" }, { status: 400 })
+    }
+
+    const durationNum = Number(interviewDurationMinutes) || 15
+    const validation = await InterviewCapacityService.validateDuration(durationNum)
+    if (!validation.valid) {
+      return NextResponse.json(
+        {
+          error: validation.reason || `Selected duration (${durationNum}m) exceeds available Gemini API capacity.`,
+          maxSafeDurationMinutes: validation.maxSafeDurationMinutes,
+        },
+        { status: 400 }
+      )
     }
 
     // Ensure recruiter exists in user table so foreign keys in job and assessment succeed
@@ -60,6 +74,7 @@ export async function POST(req: NextRequest) {
       requiredSkills: Array.isArray(requiredSkills) ? requiredSkills : [],
       description: description.trim(),
       posted: "Just now",
+      interviewDurationMinutes: durationNum,
       createdBy: user.id,
     })
 

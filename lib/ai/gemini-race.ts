@@ -133,7 +133,7 @@ export function classifyQuotaError(
 
   const metadata = errorInfo && typeof errorInfo.metadata === "object" ? errorInfo.metadata : {}
   const violations = Array.isArray(quotaFailure?.violations) ? quotaFailure.violations : []
-  const violationDescriptions = violations.map((v) => v.description || "").join(" ")
+  const violationDescriptions = violations.map((v: any) => v.description || "").join(" ")
 
   const allText = `${message} ${errorStatus} ${violationDescriptions} ${JSON.stringify(metadata)}`
   const isResourceExhausted =

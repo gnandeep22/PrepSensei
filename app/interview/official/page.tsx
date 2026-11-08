@@ -43,6 +43,7 @@ import { Badge } from "@/components/ui/badge"
 import { useInterviewAnalysis } from "@/lib/face/use-interview-analysis"
 import { FaceAnalysisReport } from "@/components/face/face-analysis-report"
 import type { InterviewFaceReport } from "@/lib/db/schema"
+import { InterviewTimer } from "@/components/interview/interview-timer"
 
 type Message = { role: "interviewer" | "candidate" | "feedback"; text: string }
 
@@ -91,6 +92,15 @@ function OfficialInterviewContent() {
   const [officialSubmissionResult, setOfficialSubmissionResult] = useState<any | null>(null)
   const [finalEvaluation, setFinalEvaluation] = useState<any | null>(null)
 
+  // Server-Authoritative Session & Time Duration Tracking
+  const [interviewSessionId, setInterviewSessionId] = useState<string | null>(null)
+  const [durationMinutes, setDurationMinutes] = useState<number>(15)
+  const [expiresAt, setExpiresAt] = useState<string | null>(null)
+  const [remainingSeconds, setRemainingSeconds] = useState<number>(15 * 60)
+  const [isTimeExpired, setIsTimeExpired] = useState<boolean>(false)
+  const isTimeExpiredRef = useRef(false)
+  isTimeExpiredRef.current = isTimeExpired
+
   const tts = useSpeechSynthesis()
   const stt = useSpeechRecognition()
   const micOnRef = useRef(micOn)
@@ -123,10 +133,28 @@ function OfficialInterviewContent() {
         })
         const faceJson = faceRes.ok ? await faceRes.json() : null
 
+        // Fetch existing session for persistent countdown timer across browser refreshes
+        const sessRes = await fetch(`/api/interview/session?jobId=${encodeURIComponent(jobId)}`)
+        const sessJson = sessRes.ok ? await sessRes.json() : null
+
         if (!active) return
+
+        if (sessJson?.hasActiveSession && sessJson?.session) {
+          setInterviewSessionId(sessJson.session.id)
+          setDurationMinutes(sessJson.durationMinutes || 15)
+          setExpiresAt(sessJson.expiresAt)
+          setRemainingSeconds(sessJson.remainingSeconds)
+        } else if (sessJson?.durationMinutes) {
+          setDurationMinutes(sessJson.durationMinutes)
+          setRemainingSeconds(sessJson.durationMinutes * 60)
+        }
 
         if (assessJson?.job) {
           setTargetJob(assessJson.job)
+          if (assessJson.job.interviewDurationMinutes) {
+            setDurationMinutes(assessJson.job.interviewDurationMinutes)
+            setRemainingSeconds(assessJson.job.interviewDurationMinutes * 60)
+          }
         } else {
           const fallback = availableJobs.find((j) => j.id === jobId) || demoJobs[0]
           setTargetJob(fallback)
@@ -258,11 +286,17 @@ function OfficialInterviewContent() {
           type,
           profile,
           screeningQuestions: recruiterAssessment?.questions || [],
+          interviewSessionId: interviewSessionId || undefined,
+          durationMinutes,
         }),
       })
       if (!res.ok) throw new Error("start failed")
       const data = (await res.json()) as StartResponse
       question = data.question
+      if (data.interviewSessionId) setInterviewSessionId(data.interviewSessionId)
+      if (data.expiresAt) setExpiresAt(data.expiresAt)
+      if (data.remainingSeconds !== undefined) setRemainingSeconds(data.remainingSeconds)
+      if (data.durationMinutes) setDurationMinutes(data.durationMinutes)
     } catch {
       question = recruiterAssessment?.questions?.[0]?.question || "Welcome to your official technical interview. To begin, please introduce yourself and summarise your core engineering background."
     } finally {
@@ -281,12 +315,15 @@ function OfficialInterviewContent() {
     void present(question)
   }
 
-  async function submitAnswer() {
+  async function submitAnswer(isForcedExpiry = false) {
     stt.stop()
     let text = answer.trim()
     if (!text && stt.isTranscribing) {
       await new Promise((r) => setTimeout(r, 500))
       text = answer.trim() || stt.transcript.trim()
+    }
+    if (!text && isForcedExpiry) {
+      text = "Time expired before full answer was submitted."
     }
     if (!text || thinking || !currentQuestion) return
 
@@ -310,6 +347,8 @@ function OfficialInterviewContent() {
           profile,
           qa: nextHistory,
           screeningQuestions: recruiterAssessment?.questions || [],
+          interviewSessionId: interviewSessionId || undefined,
+          timeExpired: Boolean(isForcedExpiry || isTimeExpiredRef.current),
         }),
       })
       if (!res.ok) throw new Error("answer failed")
@@ -317,7 +356,7 @@ function OfficialInterviewContent() {
     } catch {
       result = {
         score: 75,
-        finished: nextHistory.length >= (recruiterAssessment?.questions?.length || TOTAL_QUESTIONS),
+        finished: Boolean(isForcedExpiry || isTimeExpiredRef.current || nextHistory.length >= (recruiterAssessment?.questions?.length || TOTAL_QUESTIONS)),
         nextQuestion: null,
         feedback: "Response recorded.",
         evaluation: demoEvaluation,
@@ -342,6 +381,14 @@ function OfficialInterviewContent() {
       void present(result.nextQuestion)
     }
   }
+
+  const handleTimerExpire = useCallback(() => {
+    setIsTimeExpired(true)
+    isTimeExpiredRef.current = true
+    if (stage === "live") {
+      void submitAnswer(true)
+    }
+  }, [stage, thinking, answer, currentQuestion])
 
   async function completeAndSubmitToRecruiter(finalHistory: QAPair[], evalData: any) {
     tts.cancel()
@@ -643,6 +690,12 @@ function OfficialInterviewContent() {
                   <span className="font-semibold text-foreground">{type} Proctored Interview</span>
                 </div>
                 <div className="flex justify-between border-b pb-2">
+                  <span className="text-muted-foreground">Allocated Duration:</span>
+                  <span className="font-semibold text-foreground flex items-center gap-1.5 text-primary">
+                    <Clock className="size-3.5" /> {durationMinutes} Minutes (Time-Based)
+                  </span>
+                </div>
+                <div className="flex justify-between border-b pb-2">
                   <span className="text-muted-foreground">Total Questions:</span>
                   <span className="font-semibold text-foreground">{questionCount} Questions</span>
                 </div>
@@ -693,6 +746,11 @@ function OfficialInterviewContent() {
             </p>
           </div>
           <div className="flex items-center gap-2">
+            <InterviewTimer
+              initialSeconds={remainingSeconds}
+              expiresAt={expiresAt}
+              onExpire={handleTimerExpire}
+            />
             <Button variant="destructive" size="sm" onClick={handleEndEarly} className="gap-1.5 text-xs">
               <PhoneOff className="size-3.5" /> End Assessment
             </Button>

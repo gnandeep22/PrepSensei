@@ -18,6 +18,7 @@ export type GeneratedJobDraft = {
     skill: string
     keyPoints: string[]
   }[]
+  interviewDurationMinutes?: number
 }
 
 const jobDraftSchema = z.object({

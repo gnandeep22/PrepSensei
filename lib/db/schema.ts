@@ -113,6 +113,8 @@ export const job = pgTable("job", {
   description: text("description").notNull().default(""),
   posted: text("posted").notNull().default(""),
   url: text("url"),
+  /** Configured interview duration in minutes (5-min increments, default 15). */
+  interviewDurationMinutes: integer("interview_duration_minutes").notNull().default(15),
   createdBy: text("created_by").references(() => user.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
@@ -404,4 +406,69 @@ export const candidateStudyProgress = pgTable(
 )
 
 export type CandidateStudyProgressRow = typeof candidateStudyProgress.$inferSelect
+
+/**
+ * Gemini API usage tracking table for runtime quota enforcement and auditing.
+ */
+export const geminiApiUsage = pgTable(
+  "gemini_api_usage",
+  {
+    id: text("id").primaryKey(),
+    model: text("model").notNull(),
+    requestCount: integer("request_count").notNull().default(1),
+    inputTokens: integer("input_tokens").notNull().default(0),
+    outputTokens: integer("output_tokens").notNull().default(0),
+    totalTokens: integer("total_tokens").notNull().default(0),
+    interviewSessionId: text("interview_session_id"),
+    jobId: text("job_id"),
+    candidateUserId: text("candidate_user_id"),
+    requestPurpose: text("request_purpose").notNull(),
+    providerUsed: text("provider_used").notNull().default("google"),
+    durationMs: integer("duration_ms"),
+    status: text("status").notNull().default("success"),
+    errorMessage: text("error_message"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [
+    index("gemini_usage_created_idx").on(t.createdAt),
+    index("gemini_usage_session_idx").on(t.interviewSessionId),
+    index("gemini_usage_status_idx").on(t.status),
+  ],
+)
+
+export type GeminiApiUsageRow = typeof geminiApiUsage.$inferSelect
+
+/**
+ * Server-authoritative interview session tracking with immutable start and expiry timestamps.
+ */
+export const interviewSession = pgTable(
+  "interview_session",
+  {
+    id: text("id").primaryKey(),
+    candidateUserId: text("candidate_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    jobId: text("job_id")
+      .notNull()
+      .references(() => job.id, { onDelete: "cascade" }),
+    assessmentId: text("assessment_id"),
+    durationMinutes: integer("duration_minutes").notNull().default(15),
+    startedAt: timestamp("started_at").notNull().defaultNow(),
+    expiresAt: timestamp("expires_at").notNull(),
+    endedAt: timestamp("ended_at"),
+    status: text("status").$type<"in_progress" | "completed" | "expired">().notNull().default("in_progress"),
+    currentTurn: integer("current_turn").notNull().default(0),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (t) => [
+    index("interview_session_candidate_idx").on(t.candidateUserId),
+    index("interview_session_job_idx").on(t.jobId),
+    index("interview_session_status_idx").on(t.status),
+    index("interview_session_expires_idx").on(t.expiresAt),
+  ],
+)
+
+export type InterviewSessionRow = typeof interviewSession.$inferSelect
+
 

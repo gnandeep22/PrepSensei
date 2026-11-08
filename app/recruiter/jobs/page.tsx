@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { useMemo, useState } from "react"
 import useSWR from "swr"
-import { Briefcase, Building2, Calendar, ClipboardCheck, Plus, Search, Users, ExternalLink, Sparkles } from "lucide-react"
+import { Briefcase, Building2, Calendar, ClipboardCheck, Plus, Search, Users, ExternalLink, Sparkles, Clock } from "lucide-react"
 import { PageHeader } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -13,7 +13,7 @@ import { useApp } from "@/lib/store"
 import type { Assessment, AssessmentSubmission } from "@/lib/demo-data"
 
 export default function RecruiterJobsPage() {
-  const { assessments, submissions } = useApp()
+  const { assessments, submissions, allJobs } = useApp()
   const [search, setSearch] = useState("")
 
   const { data: assessData } = useSWR(
@@ -61,16 +61,19 @@ export default function RecruiterJobsPage() {
         jobId: string
         jobTitle: string
         company: string
+        durationMinutes: number
         assessments: Assessment[]
         applicants: number
       }
     >()
 
     for (const a of allAssessments) {
+      const matchedJob = (allJobs || []).find((x) => x.id === a.jobId)
       const entry = byJob.get(a.jobId) ?? {
         jobId: a.jobId,
         jobTitle: a.jobTitle,
         company: a.company,
+        durationMinutes: matchedJob?.interviewDurationMinutes || 15,
         assessments: [],
         applicants: 0,
       }
@@ -153,9 +156,14 @@ export default function RecruiterJobsPage() {
                       <Building2 className="size-3.5" /> {j.company}
                     </CardDescription>
                   </div>
-                  <Badge variant="default" className="bg-primary/10 text-primary border-primary/20">
-                    Active
-                  </Badge>
+                  <div className="flex flex-col items-end gap-1">
+                    <Badge variant="default" className="bg-primary/10 text-primary border-primary/20">
+                      Active
+                    </Badge>
+                    <span className="text-[11px] font-medium text-muted-foreground flex items-center gap-1">
+                      <Clock className="size-3 text-primary" /> {j.durationMinutes}m interview
+                    </span>
+                  </div>
                 </div>
               </CardHeader>
 

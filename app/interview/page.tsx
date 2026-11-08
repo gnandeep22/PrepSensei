@@ -22,6 +22,7 @@ import { Badge } from "@/components/ui/badge"
 import { useInterviewAnalysis } from "@/lib/face/use-interview-analysis"
 import { FaceAnalysisReport } from "@/components/face/face-analysis-report"
 import type { InterviewFaceReport } from "@/lib/db/schema"
+import { InterviewTimer } from "@/components/interview/interview-timer"
 
 type Message = { role: "interviewer" | "candidate" | "feedback"; text: string }
 
@@ -68,6 +69,15 @@ function InterviewContent() {
   const [interviewReport, setInterviewReport] = useState<InterviewFaceReport | null>(null)
   const [feedbacks, setFeedbacks] = useState<string[]>([])
   const [isSubmittingToDb, setIsSubmittingToDb] = useState(false)
+
+  // Server-Authoritative Timer & Duration Tracking
+  const [interviewSessionId, setInterviewSessionId] = useState<string | null>(null)
+  const [durationMinutes, setDurationMinutes] = useState<number>(job.interviewDurationMinutes || 15)
+  const [expiresAt, setExpiresAt] = useState<string | null>(null)
+  const [remainingSeconds, setRemainingSeconds] = useState<number>((job.interviewDurationMinutes || 15) * 60)
+  const [isTimeExpired, setIsTimeExpired] = useState<boolean>(false)
+  const isTimeExpiredRef = useRef(false)
+  isTimeExpiredRef.current = isTimeExpired
 
   // Fetch candidate's registered face biometrics early on mount
   useEffect(() => {
@@ -294,11 +304,16 @@ function InterviewContent() {
           type,
           profile,
           screeningQuestions: recruiterAssessment?.questions || [],
+          durationMinutes: job.interviewDurationMinutes || durationMinutes,
         }),
       })
       if (!res.ok) throw new Error("start failed")
       const data = (await res.json()) as StartResponse
       question = data.question
+      if (data.interviewSessionId) setInterviewSessionId(data.interviewSessionId)
+      if (data.expiresAt) setExpiresAt(data.expiresAt)
+      if (data.remainingSeconds !== undefined) setRemainingSeconds(data.remainingSeconds)
+      if (data.durationMinutes) setDurationMinutes(data.durationMinutes)
     } catch {
       // Fall back to the built-in demo question set.
       question = interviewQuestions[type][0]
@@ -319,12 +334,15 @@ function InterviewContent() {
     void present(question)
   }
 
-  async function submit() {
+  async function submit(isForcedExpiry = false) {
     stt.stop()
     let text = answer.trim()
     if (!text && stt.isTranscribing) {
       await new Promise((r) => setTimeout(r, 500))
       text = answer.trim() || stt.transcript.trim()
+    }
+    if (!text && isForcedExpiry) {
+      text = "Time expired before response was submitted."
     }
     if (!text || thinking || !currentQuestion) return
     setMessages((m) => [...m, { role: "candidate", text }])
@@ -347,12 +365,18 @@ function InterviewContent() {
           profile,
           qa: nextHistory,
           screeningQuestions: recruiterAssessment?.questions || [],
+          interviewSessionId: interviewSessionId || undefined,
+          timeExpired: Boolean(isForcedExpiry || isTimeExpiredRef.current),
         }),
       })
       if (!res.ok) throw new Error("answer failed")
       result = (await res.json()) as AnswerResponse
     } catch {
       result = demoFallback(type, nextHistory.length)
+      if (isForcedExpiry || isTimeExpiredRef.current) {
+        result.finished = true
+        result.nextQuestion = null
+      }
       setDegraded(true)
     }
 
@@ -381,6 +405,14 @@ function InterviewContent() {
       void present(result.nextQuestion)
     }
   }
+
+  const handleTimerExpire = useCallback(() => {
+    setIsTimeExpired(true)
+    isTimeExpiredRef.current = true
+    if (stage === "live") {
+      void submit(true)
+    }
+  }, [stage, thinking, answer, currentQuestion])
 
   function endInterview() {
     tts.cancel()
@@ -645,9 +677,14 @@ function InterviewContent() {
                   </CardTitle>
                 </div>
 
-                {/* Progress bar and counter */}
+                {/* Progress bar, timer and counter */}
                 <div className="flex flex-col items-start sm:items-end gap-1.5">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2.5">
+                    <InterviewTimer
+                      initialSeconds={remainingSeconds}
+                      expiresAt={expiresAt}
+                      onExpire={handleTimerExpire}
+                    />
                     <span className="text-xs font-semibold text-foreground">
                       Question {Math.min(index + 1, total)} <span className="text-muted-foreground font-normal">of {total}</span>
                     </span>
@@ -921,7 +958,7 @@ function InterviewContent() {
                   </div>
 
                   <Button
-                    onClick={submit}
+                    onClick={() => submit()}
                     disabled={!answer.trim() || thinking}
                     className="gap-1.5 rounded-xl px-4 shadow-sm hover-lift font-semibold"
                   >

@@ -24,6 +24,7 @@ export const jobSchema = z.object({
   description: z.string().max(8000).default(""),
   posted: z.string().max(80).default(""),
   url: z.string().max(2000).optional(),
+  interviewDurationMinutes: z.number().int().min(5).max(120).default(15),
 })
 
 export type JobInput = z.infer<typeof jobSchema>
@@ -42,6 +43,7 @@ export function rowToJob(row: JobRow): Job {
     requiredSkills: row.requiredSkills ?? [],
     description: row.description,
     posted: row.posted,
+    interviewDurationMinutes: row.interviewDurationMinutes ?? 15,
     ...(row.url ? { url: row.url } : {}),
   }
 }
@@ -71,6 +73,7 @@ export async function upsertJob(input: JobInput, userId: string): Promise<JobRow
     description: input.description,
     posted: input.posted,
     url: input.url ?? null,
+    interviewDurationMinutes: input.interviewDurationMinutes ?? 15,
     createdBy: userId,
   }
 
@@ -90,6 +93,7 @@ export async function upsertJob(input: JobInput, userId: string): Promise<JobRow
         description: values.description,
         posted: values.posted,
         url: values.url,
+        interviewDurationMinutes: values.interviewDurationMinutes,
         updatedAt: new Date(),
       },
     })

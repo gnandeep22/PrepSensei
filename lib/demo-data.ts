@@ -90,6 +90,7 @@ export type Job = {
   posted: string
   url?: string
   source?: "recruiter" | "jobful" | "indianapi" | "jsearch" | "demo" | string
+  interviewDurationMinutes?: number
 }
 
 /** Check if a job was posted directly by a recruiter in PrepSensei. */

@@ -13,6 +13,8 @@ export type StartRequest = {
   type: InterviewType
   profile: CandidateProfile
   screeningQuestions?: any[]
+  interviewSessionId?: string
+  durationMinutes?: number
 }
 
 export type AnswerRequest = {
@@ -25,11 +27,20 @@ export type AnswerRequest = {
   /** All completed question/answer pairs, including the one just submitted. */
   qa: QAPair[]
   screeningQuestions?: any[]
+  interviewSessionId?: string
+  timeExpired?: boolean
 }
 
 export type InterviewRequest = StartRequest | AnswerRequest
 
-export type StartResponse = { question: string }
+export type StartResponse = {
+  question: string
+  interviewSessionId?: string
+  durationMinutes?: number
+  startedAt?: string
+  expiresAt?: string
+  remainingSeconds?: number
+}
 
 export type AnswerResponse = {
   feedback: string
@@ -37,4 +48,6 @@ export type AnswerResponse = {
   nextQuestion: string | null
   finished: boolean
   evaluation: Evaluation | null
+  remainingSeconds?: number
+  isExpired?: boolean
 }

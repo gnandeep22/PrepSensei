@@ -25,6 +25,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import type { GeneratedJobDraft } from "@/lib/jobs/agentic-jd"
+import { InterviewConfigSection } from "./interview-config-section"
 
 const PROMPT_PRESETS = [
   "Senior Full Stack Engineer (React, Node.js, Postgres) at TechCorp in Bangalore, 4+ yrs experience, ₹18-25 LPA. Building real-time SaaS APIs and high-scale frontends.",
@@ -64,7 +65,10 @@ export function AgenticJobCreator({ onJobPublished }: { onJobPublished?: (result
       }
 
       const data = await res.json()
-      setDraft(data.draft)
+      setDraft({
+        ...data.draft,
+        interviewDurationMinutes: data.draft.interviewDurationMinutes || 15,
+      })
     } catch (err: any) {
       setError(err.message || "Something went wrong generating the job.")
     } finally {
@@ -78,6 +82,19 @@ export function AgenticJobCreator({ onJobPublished }: { onJobPublished?: (result
     setError(null)
 
     try {
+      // 1. Pre-flight validation against live Gemini API capacity
+      const valRes = await fetch("/api/interview/validate-config", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ durationMinutes: draft.interviewDurationMinutes || 15 }),
+      })
+
+      if (!valRes.ok) {
+        const valData = await valRes.json().catch(() => ({}))
+        throw new Error(valData.error || "Selected interview duration exceeds current Gemini capacity.")
+      }
+
+      // 2. Publish job and screening interview
       const res = await fetch("/api/recruiter/publish-job", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -297,6 +314,13 @@ export function AgenticJobCreator({ onJobPublished }: { onJobPublished?: (result
                 className="font-mono text-xs leading-relaxed"
               />
             </div>
+
+            {/* Time-Based Interview Configuration with Dynamic Gemini Capacity Limits */}
+            <InterviewConfigSection
+              durationMinutes={draft.interviewDurationMinutes || 15}
+              onChange={(newDur) => setDraft({ ...draft, interviewDurationMinutes: newDur })}
+              disabled={publishing}
+            />
 
             {/* Generated Screening Questions */}
             {draft.interviewQuestions && draft.interviewQuestions.length > 0 && (

@@ -37,6 +37,7 @@ export async function GET(request: Request) {
       description: j.description,
       posted: j.posted || "Recently",
       url: j.url || undefined,
+      interviewDurationMinutes: j.interviewDurationMinutes ?? 15,
       source: "recruiter" as any,
     }))
 
