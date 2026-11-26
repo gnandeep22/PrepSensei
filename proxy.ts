@@ -12,6 +12,7 @@ export function proxy(request: NextRequest) {
       ? NextResponse.redirect(new URL("/dashboard", request.url))
       : NextResponse.next()
   }
+  if (pathname === "/googlea1de0f03c127bac0.html") return NextResponse.next()
   if (pathname === "/robots.txt" || pathname === "/sitemap.xml") return NextResponse.next()
 
   const isAuthRoute = AUTH_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`))
