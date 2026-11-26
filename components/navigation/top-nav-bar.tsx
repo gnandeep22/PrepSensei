@@ -38,7 +38,7 @@ export interface TopNavBarProps {
 }
 
 const candidateNav = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/jobs", label: "Find Jobs", icon: Search },
   { href: "/matches", label: "Job Matches", icon: Target },
   { href: "/interview", label: "AI Mock Interview", icon: MessagesSquare },

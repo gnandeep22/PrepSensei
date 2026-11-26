@@ -7,6 +7,13 @@ const PUBLIC_ROUTES = ["/how-it-works"]
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
   const hasSession = Boolean(getSessionCookie(request))
+  if (pathname === "/") {
+    return hasSession
+      ? NextResponse.redirect(new URL("/dashboard", request.url))
+      : NextResponse.next()
+  }
+  if (pathname === "/robots.txt" || pathname === "/sitemap.xml") return NextResponse.next()
+
   const isAuthRoute = AUTH_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`))
   const isPublicRoute = PUBLIC_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`))
 

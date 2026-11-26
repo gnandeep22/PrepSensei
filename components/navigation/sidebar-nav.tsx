@@ -56,7 +56,7 @@ const candidateSections: NavSection[] = [
   {
     items: [
       { href: "/jobs", label: "Search", icon: Search },
-      { href: "/", label: "Home", icon: LayoutDashboard },
+      { href: "/dashboard", label: "Home", icon: LayoutDashboard },
       { href: "/matches", label: "Job Matches", icon: Target },
     ],
   },
