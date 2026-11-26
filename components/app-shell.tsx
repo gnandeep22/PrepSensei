@@ -22,7 +22,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { data: session, isPending } = useSession()
 
   const isAuthRoute = AUTH_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`))
-  const isPublicRoute = PUBLIC_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`))
+  const isPublicRoute = pathname === "/" || PUBLIC_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`))
 
   const role = (session?.user as { role?: string } | undefined)?.role === "recruiter" ? "recruiter" : "candidate"
   const userName = session?.user?.name || "Account"
@@ -122,22 +122,13 @@ export function AppShell({ children }: { children: ReactNode }) {
     )
   }
 
-  // Wait for the session to resolve before deciding what to render
-  if (isPending) {
-    return (
-      <div className="flex min-h-svh items-center justify-center bg-background">
-        <Loader2 className="size-6 animate-spin text-muted-foreground" aria-label="Loading" />
-      </div>
-    )
-  }
-
   // Public route access when not logged in (e.g. /how-it-works product tour)
   if (!session?.user && isPublicRoute) {
     return (
       <div className="app-frame relative flex min-h-svh flex-col bg-background text-foreground antialiased selection:bg-primary/20">
         <div aria-hidden="true" className="ambient-backdrop pointer-events-none fixed inset-0 -z-10 overflow-hidden"><div className="ambient-orb ambient-orb-one" /><div className="ambient-orb ambient-orb-two" /></div>
         <header className="sticky top-0 z-40 w-full border-b border-border/40 bg-background/80 backdrop-blur-xl px-4 py-3 sm:px-6 lg:px-8 flex items-center justify-between">
-          <Link href="/sign-in" className="flex items-center gap-2 group">
+          <Link href="/" className="flex items-center gap-2 group">
             <div className="brand-mark flex size-7 items-center justify-center rounded-xl text-white shadow-xs">
               <GraduationCap className="size-4" />
             </div>
@@ -156,6 +147,15 @@ export function AppShell({ children }: { children: ReactNode }) {
         <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
           {children}
         </main>
+      </div>
+    )
+  }
+
+  // Wait for the session to resolve before deciding what to render
+  if (isPending) {
+    return (
+      <div className="flex min-h-svh items-center justify-center bg-background">
+        <Loader2 className="size-6 animate-spin text-muted-foreground" aria-label="Loading" />
       </div>
     )
   }
