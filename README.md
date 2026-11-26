@@ -14,6 +14,8 @@ PrepSensei is an enterprise-grade AI-powered interview preparation, biometric ve
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791?style=flat-square&logo=postgresql)](https://www.postgresql.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
 
+**Official website:** [PrepSensei](https://prepsensei.elinity.in/)
+
 **Repository:** [github.com/gnandeep22/PrepSensei](https://github.com/gnandeep22/PrepSensei)
 
 ---
