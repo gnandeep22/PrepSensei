@@ -49,11 +49,11 @@ export default function HowItWorksPage() {
           </div>
 
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-foreground text-balance">
-            How PrepSensei Powers Grounded, High-Integrity AI Interviews.
+            How PrepSensei AI mock interviews work
           </h1>
 
           <p className="text-sm sm:text-base text-muted-foreground leading-relaxed text-pretty">
-            PrepSensei combines real-time computer vision proctoring, multi-turn conversational AI agents, and grounded evidence verification to benchmark talent with unmatched fidelity and zero bias.
+            Explore how PrepSensei uses your answers to ask follow-up questions, evaluates interview responses, and supports proctoring for recruiter-led assessments.
           </p>
 
           <div className="flex flex-wrap items-center gap-3 pt-2">
